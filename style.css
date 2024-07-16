@@ -1,0 +1,82 @@
+/*
+ Theme Name: Zakra Child
+ Theme URI: https://example.com/zakra-child
+ Description: Zakraの子テーマです。
+ Author: Tsuruoka Tenpei
+ Author URI: https://example.com
+ Template: zakra
+ Version: 1.0.0
+*/
+
+@import url("../zakra/style.css");
+
+/* 子テーマ用のカスタムスタイルをここに追加します */
+
+.movie-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5%;
+}
+
+#zak-primary .movie-item .movie-item-anchor {
+	text-decoration: none;
+	color: black;
+	 transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.movie-thumbnail img {
+  width: 100%
+}
+
+@media (min-width: 768px) {
+  .movie-item {
+    width: 47.5%;
+  }
+}
+
+.movie-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5%;
+}
+
+.movie-item {
+  width: 90%;
+  margin-bottom: 20px;
+}
+
+
+.movie-item-title {
+  margin-bottom: 5px;
+}
+
+#zak-primary .movie-item .movie-item-anchor:hover {
+    opacity: 0.8;
+}
+
+@media (min-width: 768px) {
+  .movie-item {
+    width: 47.5%;
+  }
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.pagination a,
+.pagination span {
+  margin: 0 5px;
+  padding: 5px 10px;
+  border: 1px solid #ddd;
+  color: #333;
+  text-decoration: none;
+}
+
+.pagination a:hover,
+.pagination span.current {
+  background-color: #333;
+  color: #fff;
+}

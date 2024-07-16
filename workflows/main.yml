@@ -1,0 +1,31 @@
+name: Release to Production Environment
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  job1:
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: ssh and deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}  # 秘密鍵のパスフレーズを指定
+          script: |
+            # ls -li
+            # ls -la /home/***/www
+            # pwd  # 追加: 現在のディレクトリの絶対パスを表示
+            cd ${{ secrets.SERVER_DEPLOY_DIR }}
+            # git status
+            # git checkout main
+            # git branch -a
+            # git remote -v
+            git switch main
+            git pull origin main
