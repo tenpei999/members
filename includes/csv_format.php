@@ -101,6 +101,7 @@ function extend_vendor_dashboard_pages() {
     );
 }
 
+// CSVフォーマットページのコールバック関数
 function vendor_csv_format_page_callback() {
     $last_csv_file = get_option('last_csv_file', 'なし');
     global $wpdb;
