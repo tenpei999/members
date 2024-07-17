@@ -232,9 +232,9 @@ function process_csv_data($file) {
         if (isset($data['注文日時'])) {
             $date = DateTime::createFromFormat('Y年m月d日 H:i', $data['注文日時']);
             if ($date) {
-                $data['order_date'] = $date->format('Y-m-d H:i:s');
+                $data['order_date'] = $date->format('Y-m-d H:i');
             } else {
-                $data['order_date'] = null; // パースに失敗した場合
+                $data['order_date'] = '1970-01-01 00:00'; // パースに失敗した場合
             }
         }
 
