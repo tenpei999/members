@@ -230,7 +230,12 @@ function process_csv_data($file) {
 
         // 日付を適切な形式に変換
         if (isset($data['注文日時'])) {
-            $data['注文日時'] = date('Y-m-d H:i:s', strtotime($data['注文日時']));
+            $date = DateTime::createFromFormat('Y年m月d日 H:i', $data['注文日時']);
+            if ($date) {
+                $data['order_date'] = $date->format('Y-m-d H:i:s');
+            } else {
+                $data['order_date'] = null; // パースに失敗した場合
+            }
         }
 
         // ヘッダーをProductDataにマッピング
@@ -250,35 +255,38 @@ function process_csv_data($file) {
     echo '<div class="notice notice-success"><p>CSVデータのインポートが成功しました！</p></div>';
 }
 
-function save_formatted_product_data($data) {
-    global $wpdb;
-    $table_name = $wpdb->prefix . 'custom_product_data';
+if (!function_exists('save_formatted_product_data')) {
+    function save_formatted_product_data($data) {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'custom_product_data';
 
-    foreach ($data as $product_data) {
-        $product_id = $product_data->product_item_id;
-        $sku = $product_data->order_product_management_id;
-        $name = $product_data->order_product_title;
-        $price = $product_data->selling_price_incl_tax;
-        $stock_quantity = $product_data->total_quantity;
-        $post_date = $product_data->order_date;
+        foreach ($data as $product_data) {
+            $product_id = $product_data->product_item_id;
+            $sku = $product_data->order_product_management_id;
+            $name = $product_data->order_product_title;
+            $price = $product_data->selling_price_incl_tax;
+            $stock_quantity = $product_data->total_quantity;
+            $post_date = $product_data->order_date;
 
-        error_log("保存するデータ - 商品ID: $product_id, SKU: $sku, 名前: $name, 価格: $price, 在庫数量: $stock_quantity, 注文日時: $post_date"); // デバッグ情報の追加
+            error_log("保存するデータ - 商品ID: $product_id, SKU: $sku, 名前: $name, 価格: $price, 在庫数量: $stock_quantity, 注文日時: $post_date"); // デバッグ情報の追加
 
-        // カスタムテーブルにデータを保存
-        $wpdb->replace(
-            $table_name,
-            array(
-                'product_id' => $product_id,
-                'sku' => $sku,
-                'name' => $name,
-                'price' => $price,
-                'stock_quantity' => $stock_quantity,
-                'last_updated' => current_time('mysql'),
-                'post_date' => $post_date
-            ),
-            array(
-                '%d', '%s', '%s', '%f', '%d', '%s', '%s'
-            )
-        );
+            // カスタムテーブルにデータを保存
+            $wpdb->replace(
+                $table_name,
+                array(
+                    'product_id' => $product_id,
+                    'sku' => $sku,
+                    'name' => $name,
+                    'price' => $price,
+                    'stock_quantity' => $stock_quantity,
+                    'last_updated' => current_time('mysql'),
+                    'post_date' => $post_date
+                ),
+                array(
+                    '%d', '%s', '%s', '%f', '%d', '%s', '%s'
+                )
+            );
+        }
     }
 }
+?>
