@@ -257,6 +257,9 @@ function save_formatted_product_data($data) {
         $stock_quantity = $product_data->total_quantity;
         $post_date = $product_data->order_date;
 
+        // 日付形式を変換
+        $post_date = date('Y-m-d H:i:s', strtotime($post_date));
+
         error_log("保存するデータ - 商品ID: $product_id, SKU: $sku, 名前: $name, 価格: $price, 在庫数量: $stock_quantity, 注文日時: $post_date"); // デバッグ情報の追加
 
         // カスタムテーブルにデータを保存
@@ -278,4 +281,38 @@ function save_formatted_product_data($data) {
     }
 }
 
-//yay
+function save_formatted_product_data($data) {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'custom_product_data';
+
+    foreach ($data as $product_data) {
+        $product_id = $product_data->product_item_id;
+        $sku = $product_data->order_product_management_id;
+        $name = $product_data->order_product_title;
+        $price = $product_data->selling_price_incl_tax;
+        $stock_quantity = $product_data->total_quantity;
+        $post_date = $product_data->order_date;
+
+        // 日付形式を変換
+        $post_date = date('Y-m-d H:i:s', strtotime($post_date));
+
+        error_log("保存するデータ - 商品ID: $product_id, SKU: $sku, 名前: $name, 価格: $price, 在庫数量: $stock_quantity, 注文日時: $post_date"); // デバッグ情報の追加
+
+        // カスタムテーブルにデータを保存
+        $wpdb->replace(
+            $table_name,
+            array(
+                'product_id' => $product_id,
+                'sku' => $sku,
+                'name' => $name,
+                'price' => $price,
+                'stock_quantity' => $stock_quantity,
+                'last_updated' => current_time('mysql'),
+                'post_date' => $post_date
+            ),
+            array(
+                '%d', '%s', '%s', '%f', '%d', '%s', '%s'
+            )
+        );
+    }
+}
