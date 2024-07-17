@@ -228,6 +228,11 @@ function process_csv_data($file) {
         }
         error_log("読み取ったデータ (行 {$index}): " . print_r($data, true)); // 各行のデータをデバッグログに出力
 
+        // 日付を適切な形式に変換
+        if (isset($data['注文日時'])) {
+            $data['注文日時'] = date('Y-m-d H:i:s', strtotime($data['注文日時']));
+        }
+
         // ヘッダーをProductDataにマッピング
         $mapped_data = [];
         foreach ($mapped_header as $csv_key => $property) {
@@ -256,9 +261,6 @@ function save_formatted_product_data($data) {
         $price = $product_data->selling_price_incl_tax;
         $stock_quantity = $product_data->total_quantity;
         $post_date = $product_data->order_date;
-
-        // 日付形式を変換
-        $post_date = date('Y-m-d H:i:s', strtotime($post_date));
 
         error_log("保存するデータ - 商品ID: $product_id, SKU: $sku, 名前: $name, 価格: $price, 在庫数量: $stock_quantity, 注文日時: $post_date"); // デバッグ情報の追加
 
