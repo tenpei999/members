@@ -102,23 +102,14 @@ function extend_vendor_dashboard_pages() {
 }
 
 // CSVフォーマットページのコールバック関数
-function vendor_csv_format_page_callback() {
-    $last_csv_file = get_option('last_csv_file', 'なし');
+function vendor_csv_import_results_page_callback() {
     global $wpdb;
     $table_name = $wpdb->prefix . 'custom_product_data';
     $results = $wpdb->get_results("SELECT * FROM $table_name");
 
     ?>
     <div class="wrap">
-        <h1><?php _e('CSV フォーマット', 'wc-vendors'); ?></h1>
-        <p><?php _e('ここにCSVフォーマットに関する説明や設定を追加できます。', 'wc-vendors'); ?></p>
-        <p><?php _e('最後にアップロードされたCSVファイル: ', 'wc-vendors'); ?><?php echo esc_html($last_csv_file); ?></p>
-        <form method="post" enctype="multipart/form-data">
-            <?php wp_nonce_field('csv_upload_action', 'csv_upload_nonce'); ?>
-            <input type="file" name="csv_file" accept=".csv" required>
-            <input type="submit" name="upload_csv" value="CSVをアップロード" class="button button-primary">
-        </form>
-        <h2><?php _e('フォーマットされた商品データ', 'wc-vendors'); ?></h2>
+        <h1><?php _e('CSV インポート結果', 'wc-vendors'); ?></h1>
         <table class="widefat fixed" cellspacing="0">
             <thead>
                 <tr>
@@ -142,21 +133,13 @@ function vendor_csv_format_page_callback() {
                     <td><?php echo esc_html($row->price); ?></td>
                     <td><?php echo esc_html($row->stock_quantity); ?></td>
                     <td><?php echo esc_html($row->last_updated); ?></td>
-                    <td><?php echo esc_html($row->post_date); ?></td>
+                    <td><?php echo esc_html(date('Y年m月d日 H:i', strtotime($row->post_date))); ?></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
     </div>
     <?php
-    if (isset($_POST['upload_csv']) && !empty($_FILES['csv_file']['tmp_name'])) {
-        // nonceを確認
-        if (!isset($_POST['csv_upload_nonce']) || !wp_verify_nonce($_POST['csv_upload_nonce'], 'csv_upload_action')) {
-            wp_die('Nonce verification failed.');
-        }
-        update_option('last_csv_file', $_FILES['csv_file']['name']);
-        process_csv_data($_FILES['csv_file']['tmp_name']);
-    }
 }
 
 // CSVファイルの処理関数
@@ -271,7 +254,7 @@ if (!function_exists('save_formatted_product_data')) {
             $date_str = $product_data->order_date;
             $date_obj = DateTime::createFromFormat('Y年m月d日 H:i', $date_str);
             if ($date_obj) {
-                $post_date = $date_obj->format('Y年m月d日 H:i');
+                $post_date = $date_obj->format('Y-m-d H:i:s');
             } else {
                 $post_date = current_time('mysql'); // フォーマットに失敗した場合の取り込んだ際の日時
             }
@@ -295,6 +278,6 @@ if (!function_exists('save_formatted_product_data')) {
                 )
             );
         }
-    }    
+    }      
 }
 ?>
