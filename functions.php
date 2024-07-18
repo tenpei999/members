@@ -283,3 +283,10 @@ add_action( 'wp_enqueue_scripts', 'custom_announcements_block_frontend_assets' )
 require get_stylesheet_directory() . '/template-parts/blocks/announcements-block/announcements-block.php';
 
 require get_stylesheet_directory() . '/includes/csv_format.php';
+
+// functions.php
+
+function include_ai_help_shortcodes() {
+    require get_stylesheet_directory() . '/includes/ai_help.php';
+}
+add_action('init', 'include_ai_help_shortcodes');
