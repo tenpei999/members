@@ -1,4 +1,3 @@
-
 <?php
 function get_site_articles() {
     $args = array(
