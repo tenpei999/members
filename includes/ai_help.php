@@ -19,7 +19,7 @@ function get_site_articles() {
     return $articles;
 }
 
-function custom_ai_help($atts) {
+function custom_api_help($atts) {
     ob_start();
     $articles = get_site_articles();
     $article_texts = '';
@@ -97,4 +97,4 @@ function custom_ai_help($atts) {
     <?php
     return ob_get_clean();
 }
-add_shortcode('custom_ai_help', 'custom_ai_help');
+add_shortcode('custom_api_help', 'custom_api_help');
