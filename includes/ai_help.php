@@ -97,4 +97,4 @@ function ai_help($atts) {
     <?php
     return ob_get_clean();
 }
-add_shortcode('ai_help', 'ai_help_function');
+add_shortcode('ai_help', 'ai_help');
