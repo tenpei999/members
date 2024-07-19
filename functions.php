@@ -284,8 +284,6 @@ require get_stylesheet_directory() . '/template-parts/blocks/announcements-block
 
 require get_stylesheet_directory() . '/includes/csv_format.php';
 
-<?php
-
 // プラグインのファイルパスを指定してインクルード
 require_once( WP_PLUGIN_DIR . '/ai-engine/classes/core.php' );
 
