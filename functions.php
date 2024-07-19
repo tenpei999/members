@@ -283,4 +283,3 @@ add_action( 'wp_enqueue_scripts', 'custom_announcements_block_frontend_assets' )
 require get_stylesheet_directory() . '/template-parts/blocks/announcements-block/announcements-block.php';
 
 require get_stylesheet_directory() . '/includes/csv_format.php';
-
