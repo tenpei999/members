@@ -291,11 +291,11 @@ function initialize_ai_engine() {
 }
 
 // 初期化フックに関数を追加
-function display_ai_engine_for_logged_in_users() {
-    if (is_user_logged_in()) {
-        initialize_ai_engine();
-    }
-}
+// function display_ai_engine_for_logged_in_users() {
+//     if (is_user_logged_in()) {
+//         initialize_ai_engine();
+//     }
+// }
 
 // プラグインの初期化アクションを解除
 function cancel_plugin_initialization() {
@@ -306,4 +306,4 @@ function cancel_plugin_initialization() {
 }
 
 add_action('init', 'cancel_plugin_initialization', 1); // 早い段階で実行
-add_action('init', 'display_ai_engine_for_logged_in_users', 20); // 遅い段階で実行
+// add_action('init', 'display_ai_engine_for_logged_in_users', 20); // 遅い段階で実行
