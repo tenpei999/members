@@ -307,5 +307,3 @@ function cancel_plugin_initialization() {
 
 add_action('init', 'cancel_plugin_initialization', 1); // 早い段階で実行
 add_action('init', 'display_ai_engine_for_logged_in_users', 20); // 遅い段階で実行
-?>
-
