@@ -284,26 +284,3 @@ require get_stylesheet_directory() . '/template-parts/blocks/announcements-block
 
 require get_stylesheet_directory() . '/includes/csv_format.php';
 
-// AIエンジンを初期化する関数
-function initialize_ai_engine() {
-    // プラグインのMeow_MWAI_Coreクラスのインスタンスを生成
-    new Meow_MWAI_Core();
-}
-
-// 初期化フックに関数を追加
-// function display_ai_engine_for_logged_in_users() {
-//     if (is_user_logged_in()) {
-//         initialize_ai_engine();
-//     }
-// }
-
-// プラグインの初期化アクションを解除
-function cancel_plugin_initialization() {
-    remove_action('plugins_loaded', array('Meow_MWAI_Core', 'init'));
-    remove_action('wp_register_script', array('Meow_MWAI_Core', 'register_scripts'));
-    remove_action('wp_enqueue_scripts', array('Meow_MWAI_Core', 'register_scripts'));
-    remove_action('admin_enqueue_scripts', array('Meow_MWAI_Core', 'register_scripts'));
-}
-
-add_action('init', 'cancel_plugin_initialization', 1); // 早い段階で実行
-// add_action('init', 'display_ai_engine_for_logged_in_users', 20); // 遅い段階で実行
