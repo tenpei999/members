@@ -298,19 +298,11 @@ function disable_chatbot_output() {
     }
 }
 
-// 管理画面でのチャットボットの出力を無効にする
-add_action('admin_enqueue_scripts', 'disable_chatbot_output_admin', 100);
-function disable_chatbot_output_admin() {
-    // チャットボットに関連するスクリプトをデキューする
-    wp_dequeue_script('mwai_chatbot');
-    wp_dequeue_script('mwai_highlight'); // オプションで使用されるシンタックスハイライト用スクリプト
-
-    // チャットボットに関連するテーマスタイルをデキューする
-    $themes = ['chatgpt', 'messages', 'timeless']; // 実際のテーマIDのリストを指定します
-    foreach ($themes as $themeId) {
-        wp_dequeue_style("mwai_chatbot_theme_$themeId");
-    }
-}
+// チャットボットのパラメータを空にして、フロントエンドでの出力を無効にする
+add_filter('mwai_chatbot_params', function ($params) {
+    // フロントエンドでチャットボットを表示しないようにするために空のパラメータを返す
+    return [];
+});
 
 // REST API のチャットボットエンドポイントを無効にする
 add_filter('rest_endpoints', 'disable_chatbot_rest_endpoints');
@@ -320,3 +312,4 @@ function disable_chatbot_rest_endpoints($endpoints) {
     }
     return $endpoints;
 }
+
