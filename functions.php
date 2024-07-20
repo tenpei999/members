@@ -284,75 +284,36 @@ require get_stylesheet_directory() . '/template-parts/blocks/announcements-block
 
 require get_stylesheet_directory() . '/includes/csv_format.php';
 
-// AI Engine ポップアップを非表示にする
-add_filter( 'mwai_chatbot_params', 'disable_ai_engine_popup' );
+// フロントエンドでのチャットボットポップアップの出力を無効にする
+add_action('wp_enqueue_scripts', 'disable_ai_engine_popup', 1);
+function disable_ai_engine_popup() {
+    // チャットボットに関連するスクリプトをデキューする
+    wp_dequeue_script('mwai_chatbot');
+    wp_dequeue_script('mwai_highlight'); // オプションで使用されるシンタックスハイライト用スクリプト
 
-// プラグインのファイルパスを指定してインクルード
-require_once( WP_PLUGIN_DIR . '/ai-engine/classes/core.php' );
-
-// インスタンス生成
-$mwai_core = new Meow_MWAI_Core();
-
-// チャットボットの初期化
-add_action('init', 'initialize_chatbot');
-function initialize_chatbot() {
-    global $mwai_core;
-
-    // REST APIの初期化
-    if ($mwai_core->is_rest) {
-        new Meow_MWAI_Rest($mwai_core);
-    }
-
-    // 管理画面の初期化
-    if (is_admin()) {
-        new Meow_MWAI_Admin($mwai_core);
-    }
-
-    // チャットボットの設定
-    if ($mwai_core->get_option('module_chatbots')) {
-        $mwai_core->chatbot = new Meow_MWAI_Modules_Chatbot();
-        $mwai_core->discussions = new Meow_MWAI_Modules_Discussions();
+    // チャットボットに関連するテーマスタイルをデキューする
+    $themes = ['chatgpt', 'messages', 'timeless']; // 実際のテーマIDのリストを指定します
+    foreach ($themes as $themeId) {
+        wp_dequeue_style("mwai_chatbot_theme_$themeId");
     }
 }
 
-// CSSを追加してmwai-triggerとmwai-open-buttonを非表示にする
-add_action('wp_enqueue_scripts', 'hide_mwai_buttons');
-function hide_mwai_buttons() {
-    if (is_user_logged_in()) {
-        wp_add_inline_style('wp-block-library', '
-            .mwai-trigger, .mwai-open-button {
-                display: none !important;
-            }
-        ');
-    }
+// チャットボットポップアップの注入を無効にする
+add_action('wp_footer', 'remove_chatbot_popup_injection', 1);
+function remove_chatbot_popup_injection() {
+    remove_action('wp_footer', array('Meow_MWAI_Modules_Chatbot', 'inject_chat'));
 }
 
-// チャットボットコンテナの表示
-add_action('wp_footer', 'display_chatbot_container');
-function display_chatbot_container() {
-    if (is_user_logged_in()) {
-        ?>
-        <div id="mwai-chatbot-container"></div>
-        <script>
-            document.addEventListener("DOMContentLoaded", function() {
-                fetch('https://www.tsuruten-web123.com/members/wp-json/mwai/v1/simpleChatbotQuery', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        prompt: "Hi! Who are you, actually?",
-                        botId: "default"
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    // チャットボットのレスポンスを処理し、コンテナに表示します
-                    document.getElementById('mwai-chatbot-container').innerText = data.response;
-                })
-                .catch(error => console.error('Error:', error));
-            });
-        </script>
-        <?php
+// REST API のチャットボットエンドポイントを無効にする
+add_filter('rest_endpoints', 'disable_chatbot_rest_endpoints');
+function disable_chatbot_rest_endpoints($endpoints) {
+    if (isset($endpoints['/mwai-ui/v1/chats/submit'])) {
+        unset($endpoints['/mwai-ui/v1/chats/submit']);
     }
+    return $endpoints;
 }
+
+// チャットボットのパラメータを空にするフィルター
+add_filter('mwai_chatbot_params', function ($params) {
+    return []; // フロントエンドでチャットボットを表示しないようにするために空のパラメータを返す
+});
