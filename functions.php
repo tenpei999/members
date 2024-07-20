@@ -283,18 +283,3 @@ add_action( 'wp_enqueue_scripts', 'custom_announcements_block_frontend_assets' )
 require get_stylesheet_directory() . '/template-parts/blocks/announcements-block/announcements-block.php';
 
 require get_stylesheet_directory() . '/includes/csv_format.php';
-
-// フロントエンドでのチャットボットの出力を無効にする
-add_action('wp_enqueue_scripts', 'disable_chatbot_output', 100);
-function disable_chatbot_output() {
-    // チャットボットに関連するスクリプトをデキューする
-    wp_dequeue_script('mwai_chatbot');
-    wp_dequeue_script('mwai_highlight'); // オプションで使用されるシンタックスハイライト用スクリプト
-
-    // チャットボットに関連するテーマスタイルをデキューする
-    $themes = ['chatgpt', 'messages', 'timeless']; // 実際のテーマIDのリストを指定します
-    foreach ($themes as $themeId) {
-        wp_dequeue_style("mwai_chatbot_theme_$themeId");
-    }
-}
-
