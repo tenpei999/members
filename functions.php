@@ -285,8 +285,22 @@ require get_stylesheet_directory() . '/template-parts/blocks/announcements-block
 require get_stylesheet_directory() . '/includes/csv_format.php';
 
 // フロントエンドでのチャットボットの出力を無効にする
-add_action('wp_enqueue_scripts', 'disable_chatbot_output', 1);
+add_action('wp_enqueue_scripts', 'disable_chatbot_output', 100);
 function disable_chatbot_output() {
+    // チャットボットに関連するスクリプトをデキューする
+    wp_dequeue_script('mwai_chatbot');
+    wp_dequeue_script('mwai_highlight'); // オプションで使用されるシンタックスハイライト用スクリプト
+
+    // チャットボットに関連するテーマスタイルをデキューする
+    $themes = ['chatgpt', 'messages', 'timeless']; // 実際のテーマIDのリストを指定します
+    foreach ($themes as $themeId) {
+        wp_dequeue_style("mwai_chatbot_theme_$themeId");
+    }
+}
+
+// 管理画面でのチャットボットの出力を無効にする
+add_action('admin_enqueue_scripts', 'disable_chatbot_output_admin', 100);
+function disable_chatbot_output_admin() {
     // チャットボットに関連するスクリプトをデキューする
     wp_dequeue_script('mwai_chatbot');
     wp_dequeue_script('mwai_highlight'); // オプションで使用されるシンタックスハイライト用スクリプト
