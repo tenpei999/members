@@ -327,6 +327,10 @@ function vendor_csv_format_page_callback() {
                 <?php endforeach; ?>
             </tbody>
         </table>
+        <form method="post">
+            <?php wp_nonce_field('woocommerce_sync_action', 'woocommerce_sync_nonce'); ?>
+            <input type="submit" name="sync_woocommerce" value="WooCommerceに同期" class="button button-primary">
+        </form>
     </div>
     <?php
     if (isset($_POST['upload_csv']) && !empty($_FILES['csv_file']['tmp_name'])) {
@@ -337,20 +341,7 @@ function vendor_csv_format_page_callback() {
         update_option('last_csv_file', $_FILES['csv_file']['name']);
         process_csv_data($_FILES['csv_file']['tmp_name']);
     }
-}
 
-// WooCommerce 同期ページのコールバック関数
-function vendor_woocommerce_sync_page_callback() {
-    ?>
-    <div class="wrap">
-        <h1><?php _e('WooCommerce 同期', 'wc-vendors'); ?></h1>
-        <p><?php _e('WooCommerce へのデータ同期を行います。', 'wc-vendors'); ?></p>
-        <form method="post">
-            <?php wp_nonce_field('woocommerce_sync_action', 'woocommerce_sync_nonce'); ?>
-            <input type="submit" name="sync_woocommerce" value="WooCommerceに同期" class="button button-primary">
-        </form>
-    </div>
-    <?php
     if (isset($_POST['sync_woocommerce'])) {
         // nonceを確認
         if (!isset($_POST['woocommerce_sync_nonce']) || !wp_verify_nonce($_POST['woocommerce_sync_nonce'], 'woocommerce_sync_action')) {
