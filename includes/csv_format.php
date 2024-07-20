@@ -227,17 +227,20 @@ function sync_with_woocommerce() {
         // WooCommerce に商品を追加または更新
         $existing_product_id = wc_get_product_id_by_sku($product->sku);
         if ($existing_product_id) {
-            $product_data['id'] = $existing_product_id;
             $product = new WC_Product($existing_product_id);
-            foreach ($product_data as $key => $value) {
-                $product->set_prop($key, $value);
-            }
+            $product->set_name($product_data['name']);
+            $product->set_regular_price($product_data['regular_price']);
+            $product->set_sku($product_data['sku']);
+            $product->set_stock_quantity($product_data['stock_quantity']);
+            $product->set_status($product_data['status']);
             $product->save();
         } else {
             $new_product = new WC_Product();
-            foreach ($product_data as $key => $value) {
-                $new_product->set_prop($key, $value);
-            }
+            $new_product->set_name($product_data['name']);
+            $new_product->set_regular_price($product_data['regular_price']);
+            $new_product->set_sku($product_data['sku']);
+            $new_product->set_stock_quantity($product_data['stock_quantity']);
+            $new_product->set_status($product_data['status']);
             $new_product->save();
         }
     }
