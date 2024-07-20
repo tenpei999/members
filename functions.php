@@ -294,4 +294,3 @@ public function inject_chat() {
     }
     return null;
 }
-
