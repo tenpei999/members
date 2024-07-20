@@ -227,21 +227,20 @@ function sync_with_woocommerce() {
         // WooCommerce に商品を追加または更新
         $existing_product_id = wc_get_product_id_by_sku($product->sku);
         if ($existing_product_id) {
-            $product = new WC_Product($existing_product_id);
-            $product->set_name($product_data['name']);
-            $product->set_regular_price($product_data['regular_price']);
-            $product->set_sku($product_data['sku']);
-            $product->set_stock_quantity($product_data['stock_quantity']);
-            $product->set_status($product_data['status']);
-            $product->save();
+            $wc_product = wc_get_product($existing_product_id);
+            $wc_product->set_name($product_data['name']);
+            $wc_product->set_regular_price($product_data['regular_price']);
+            $wc_product->set_stock_quantity($product_data['stock_quantity']);
+            $wc_product->set_status($product_data['status']);
+            $wc_product->save();
         } else {
-            $new_product = new WC_Product();
-            $new_product->set_name($product_data['name']);
-            $new_product->set_regular_price($product_data['regular_price']);
-            $new_product->set_sku($product_data['sku']);
-            $new_product->set_stock_quantity($product_data['stock_quantity']);
-            $new_product->set_status($product_data['status']);
-            $new_product->save();
+            $wc_product = new WC_Product_Simple();
+            $wc_product->set_name($product_data['name']);
+            $wc_product->set_regular_price($product_data['regular_price']);
+            $wc_product->set_sku($product_data['sku']);
+            $wc_product->set_stock_quantity($product_data['stock_quantity']);
+            $wc_product->set_status($product_data['status']);
+            $wc_product->save();
         }
     }
     echo '<div class="notice notice-success"><p>WooCommerce への同期が成功しました！</p></div>';
