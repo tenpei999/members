@@ -227,21 +227,21 @@ function sync_with_woocommerce() {
         // WooCommerce に商品を追加または更新
         $existing_product_id = wc_get_product_id_by_sku($product->sku);
         if ($existing_product_id) {
-            $wc_product = new WC_Product($existing_product_id);
-            $wc_product->set_name($product_data['name']);
-            $wc_product->set_regular_price($product_data['regular_price']);
-            $wc_product->set_sku($product_data['sku']);
-            $wc_product->set_stock_quantity($product_data['stock_quantity']);
-            $wc_product->set_status($product_data['status']);
-            $wc_product->save();
+            $product = new WC_Product($existing_product_id);
+            $product->set_name($product_data['name']);
+            $product->set_regular_price($product_data['regular_price']);
+            $product->set_sku($product_data['sku']);
+            $product->set_stock_quantity($product_data['stock_quantity']);
+            $product->set_status($product_data['status']);
+            $product->save();
         } else {
-            $wc_product = new WC_Product();
-            $wc_product->set_name($product_data['name']);
-            $wc_product->set_regular_price($product_data['regular_price']);
-            $wc_product->set_sku($product_data['sku']);
-            $wc_product->set_stock_quantity($product_data['stock_quantity']);
-            $wc_product->set_status($product_data['status']);
-            $wc_product->save();
+            $new_product = new WC_Product();
+            $new_product->set_name($product_data['name']);
+            $new_product->set_regular_price($product_data['regular_price']);
+            $new_product->set_sku($product_data['sku']);
+            $new_product->set_stock_quantity($product_data['stock_quantity']);
+            $new_product->set_status($product_data['status']);
+            $new_product->save();
         }
     }
     echo '<div class="notice notice-success"><p>WooCommerce への同期が成功しました！</p></div>';
@@ -276,15 +276,17 @@ add_action('init', 'create_custom_product_table');
 add_action('admin_menu', 'extend_vendor_dashboard_pages');
 function extend_vendor_dashboard_pages() {
     if (current_user_can('manage_options')) {
-        add_submenu_page(
-            'edit.php?post_type=product',
-            __( 'CSV フォーマット', 'wc-vendors' ),
-            __( 'CSV フォーマット', 'wc-vendors' ),
-            'manage_options',
-            'wcv-vendor-csv-format',
-            'vendor_csv_format_page_callback'
-        );
+        return;
     }
+
+    add_submenu_page(
+        'edit.php?post_type=product',
+        __( 'CSV フォーマット', 'wc-vendors' ),
+        __( 'CSV フォーマット', 'wc-vendors' ),
+        'manage_product',
+        'wcv-vendor-csv-format',
+        'vendor_csv_format_page_callback'
+    );
 }
 
 // CSVフォーマットページのコールバック関数
