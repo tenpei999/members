@@ -298,18 +298,3 @@ function disable_chatbot_output() {
     }
 }
 
-// チャットボットのパラメータを空にして、フロントエンドでの出力を無効にする
-add_filter('mwai_chatbot_params', function ($params) {
-    // フロントエンドでチャットボットを表示しないようにするために空のパラメータを返す
-    return [];
-});
-
-// REST API のチャットボットエンドポイントを無効にする
-add_filter('rest_endpoints', 'disable_chatbot_rest_endpoints');
-function disable_chatbot_rest_endpoints($endpoints) {
-    if (isset($endpoints['/mwai-ui/v1/chats/submit'])) {
-        unset($endpoints['/mwai-ui/v1/chats/submit']);
-    }
-    return $endpoints;
-}
-
