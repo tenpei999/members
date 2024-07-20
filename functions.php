@@ -284,11 +284,19 @@ require get_stylesheet_directory() . '/template-parts/blocks/announcements-block
 
 require get_stylesheet_directory() . '/includes/csv_format.php';
 
-function show_chatbot_for_logged_in_users() {
-    if ( is_user_logged_in() ) {
-        echo '<script>document.querySelector(".mwai-chatbot-container").style.display = "block";</script>';
-    } else {
-        echo '<script>document.querySelector(".mwai-chatbot-container").style.display = "none";</script>';
-    }
+// ログイン状態に基づいてスタイルを変更する関数
+add_action('wp_head', 'conditional_chatbot_style');
+function conditional_chatbot_style() {
+    ?>
+    <style type="text/css">
+        .mwai-chatgpt-theme.mwai-window {
+            display: none;
+        }
+        <?php if (is_user_logged_in()) : ?>
+            .mwai-chatgpt-theme.mwai-window {
+                display: block;
+            }
+        <?php endif; ?>
+    </style>
+    <?php
 }
-add_action( 'wp_footer', 'show_chatbot_for_logged_in_users' );
