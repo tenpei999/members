@@ -233,6 +233,8 @@ function sync_with_woocommerce() {
             $wc_product->set_stock_quantity($product_data['stock_quantity']);
             $wc_product->set_status($product_data['status']);
             $wc_product->save();
+            // デバッグ: 更新された商品オブジェクトをログに出力
+             error_log("更新された商品オブジェクト (ID: $existing_product_id): " . print_r($wc_product, true));
         } else {
             $wc_product = new WC_Product_Simple();
             $wc_product->set_name($product_data['name']);
@@ -241,6 +243,8 @@ function sync_with_woocommerce() {
             $wc_product->set_stock_quantity($product_data['stock_quantity']);
             $wc_product->set_status($product_data['status']);
             $wc_product->save();
+            // デバッグ: 作成された商品オブジェクトをログに出力
+            error_log("作成された商品オブジェクト: " . print_r($wc_product, true));
         }
     }
     echo '<div class="notice notice-success"><p>WooCommerce への同期が成功しました！</p></div>';
