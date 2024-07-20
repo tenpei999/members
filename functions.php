@@ -283,3 +283,15 @@ add_action( 'wp_enqueue_scripts', 'custom_announcements_block_frontend_assets' )
 require get_stylesheet_directory() . '/template-parts/blocks/announcements-block/announcements-block.php';
 
 require get_stylesheet_directory() . '/includes/csv_format.php';
+
+public function inject_chat() {
+    $params = $this->core->get_chatbot( $this->siteWideChatId );
+    $clean_params = [];
+    if ( !empty( $params ) ) {
+        $clean_params['window'] = true;
+        $clean_params['id'] = $this->siteWideChatId;
+        echo $this->chat_shortcode( $clean_params );
+    }
+    return null;
+}
+
