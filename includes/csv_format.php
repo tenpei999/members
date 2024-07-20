@@ -207,6 +207,19 @@ if (!function_exists('save_formatted_product_data')) {
     }      
 }
 
+// WooCommerce の商品一覧を取得してログに出力する関数
+function log_woocommerce_products() {
+    $args = array(
+        'limit' => -1, // すべての商品を取得
+        'status' => 'any', // すべてのステータスの商品を含む
+    );
+    $products = wc_get_products($args);
+
+    foreach ($products as $product) {
+        error_log("商品オブジェクト (ID: {$product->get_id()}): " . print_r($product, true));
+    }
+}
+
 // WooCommerce に同期する関数
 function sync_with_woocommerce() {
     global $wpdb;
@@ -265,6 +278,8 @@ function sync_with_woocommerce() {
             error_log("作成された商品オブジェクト: " . print_r($wc_product, true));
         }
     }
+    log_woocommerce_products();
+
     echo '<div class="notice notice-success"><p>WooCommerce への同期が成功しました！</p></div>';
 }
 
