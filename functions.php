@@ -283,3 +283,12 @@ add_action( 'wp_enqueue_scripts', 'custom_announcements_block_frontend_assets' )
 require get_stylesheet_directory() . '/template-parts/blocks/announcements-block/announcements-block.php';
 
 require get_stylesheet_directory() . '/includes/csv_format.php';
+
+function show_chatbot_for_logged_in_users() {
+    if ( is_user_logged_in() ) {
+        echo '<script>document.querySelector(".mwai-chatbot-container").style.display = "block";</script>';
+    } else {
+        echo '<script>document.querySelector(".mwai-chatbot-container").style.display = "none";</script>';
+    }
+}
+add_action( 'wp_footer', 'show_chatbot_for_logged_in_users' );
