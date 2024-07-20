@@ -59,106 +59,14 @@ class ProductData {
     }
 }
 
-// テーブル作成関数
-function create_custom_product_table() {
+// WooCommerceの商品IDと注文日時を用いて一意の値を判断する関数
+function is_duplicate_product($product_item_id, $order_date) {
     global $wpdb;
     $table_name = $wpdb->prefix . 'custom_product_data';
-    
-    $charset_collate = $wpdb->get_charset_collate();
-
-    $sql = "CREATE TABLE IF NOT EXISTS $table_name (
-        id mediumint(9) NOT NULL AUTO_INCREMENT,
-        product_id bigint(20) NOT NULL,
-        sku varchar(100) NOT NULL,
-        name varchar(255) NOT NULL,
-        price decimal(10,2) NOT NULL,
-        stock_quantity int(11) NOT NULL,
-        last_updated datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
-        post_date datetime NOT NULL,
-        PRIMARY KEY  (id),
-        UNIQUE KEY product_id (product_id)
-    ) $charset_collate;";
-
-    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-    dbDelta($sql);
+    $query = $wpdb->prepare("SELECT COUNT(*) FROM $table_name WHERE product_id = %d AND post_date = %s", $product_item_id, $order_date);
+    $count = $wpdb->get_var($query);
+    return $count > 0;
 }
-add_action('init', 'create_custom_product_table');
-
-// 管理メニューにサブメニューを追加
-add_action('admin_menu', 'extend_vendor_dashboard_pages');
-function extend_vendor_dashboard_pages() {
-    if (current_user_can('manage_options')) {
-        return;
-    }
-
-    add_submenu_page(
-        'edit.php?post_type=product',
-        __( 'CSV フォーマット', 'wc-vendors' ),
-        __( 'CSV フォーマット', 'wc-vendors' ),
-        'manage_product',
-        'wcv-vendor-csv-format',
-        'vendor_csv_format_page_callback'
-    );
-}
-
-// CSVフォーマットページのコールバック関数
-function vendor_csv_format_page_callback() {
-    $last_csv_file = get_option('last_csv_file', 'なし');
-    global $wpdb;
-    $table_name = $wpdb->prefix . 'custom_product_data';
-    $results = $wpdb->get_results("SELECT * FROM $table_name");
-
-    ?>
-    <div class="wrap">
-        <h1><?php _e('CSV フォーマット', 'wc-vendors'); ?></h1>
-        <p><?php _e('ここにCSVフォーマットに関する説明や設定を追加できます。', 'wc-vendors'); ?></p>
-        <p><?php _e('最後にアップロードされたCSVファイル: ', 'wc-vendors'); ?><?php echo esc_html($last_csv_file); ?></p>
-        <form method="post" enctype="multipart/form-data">
-            <?php wp_nonce_field('csv_upload_action', 'csv_upload_nonce'); ?>
-            <input type="file" name="csv_file" accept=".csv" required>
-            <input type="submit" name="upload_csv" value="CSVをアップロード" class="button button-primary">
-        </form>
-        <h2><?php _e('フォーマットされた商品データ', 'wc-vendors'); ?></h2>
-        <table class="widefat fixed" cellspacing="0">
-            <thead>
-                <tr>
-                    <th><?php _e('ID', 'wc-vendors'); ?></th>
-                    <th><?php _e('商品ID', 'wc-vendors'); ?></th>
-                    <th><?php _e('SKU', 'wc-vendors'); ?></th>
-                    <th><?php _e('名前', 'wc-vendors'); ?></th>
-                    <th><?php _e('価格', 'wc-vendors'); ?></th>
-                    <th><?php _e('在庫数量', 'wc-vendors'); ?></th>
-                    <th><?php _e('最終更新日', 'wc-vendors'); ?></th>
-                    <th><?php _e('注文日時', 'wc-vendors'); ?></th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($results as $row) : ?>
-                <tr>
-                    <td><?php echo esc_html($row->id); ?></td>
-                    <td><?php echo esc_html($row->product_id); ?></td>
-                    <td><?php echo esc_html($row->sku); ?></td>
-                    <td><?php echo esc_html($row->name); ?></td>
-                    <td><?php echo esc_html($row->price); ?></td>
-                    <td><?php echo esc_html($row->stock_quantity); ?></td>
-                    <td><?php echo esc_html($row->last_updated); ?></td>
-                    <td><?php echo esc_html(date('Y年m月d日 H:i', strtotime($row->post_date))); ?></td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-    <?php
-    if (isset($_POST['upload_csv']) && !empty($_FILES['csv_file']['tmp_name'])) {
-        // nonceを確認
-        if (!isset($_POST['csv_upload_nonce']) || !wp_verify_nonce($_POST['csv_upload_nonce'], 'csv_upload_action')) {
-            wp_die('Nonce verification failed.');
-        }
-        update_option('last_csv_file', $_FILES['csv_file']['name']);
-        process_csv_data($_FILES['csv_file']['tmp_name']);
-    }
-}
-
 
 // CSVファイルの処理関数
 function process_csv_data($file) {
@@ -297,5 +205,158 @@ if (!function_exists('save_formatted_product_data')) {
             );
         }
     }      
+}
+
+// WooCommerce に同期する関数
+function sync_with_woocommerce() {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'custom_product_data';
+    $products = $wpdb->get_results("SELECT * FROM $table_name");
+
+    foreach ($products as $product) {
+        // 商品データの準備
+        $product_data = array(
+            'post_title' => $product->name,
+            'post_content' => '',
+            'post_status' => 'publish',
+            'post_type' => 'product',
+            'meta_input' => array(
+                '_sku' => $product->sku,
+                '_price' => $product->price,
+                '_stock' => $product->stock_quantity,
+            ),
+        );
+
+        // WooCommerce に商品を追加または更新
+        $existing_product_id = wc_get_product_id_by_sku($product->sku);
+        if ($existing_product_id) {
+            $product_data['ID'] = $existing_product_id;
+            wp_update_post($product_data);
+        } else {
+            $new_product_id = wp_insert_post($product_data);
+        }
+    }
+    echo '<div class="notice notice-success"><p>WooCommerce への同期が成功しました！</p></div>';
+}
+
+// テーブル作成関数
+function create_custom_product_table() {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'custom_product_data';
+    
+    $charset_collate = $wpdb->get_charset_collate();
+
+    $sql = "CREATE TABLE IF NOT EXISTS $table_name (
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        product_id bigint(20) NOT NULL,
+        sku varchar(100) NOT NULL,
+        name varchar(255) NOT NULL,
+        price decimal(10,2) NOT NULL,
+        stock_quantity int(11) NOT NULL,
+        last_updated datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        post_date datetime NOT NULL,
+        PRIMARY KEY  (id),
+        UNIQUE KEY product_id (product_id)
+    ) $charset_collate;";
+
+    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+    dbDelta($sql);
+}
+add_action('init', 'create_custom_product_table');
+
+// 管理メニューにサブメニューを追加
+add_action('admin_menu', 'extend_vendor_dashboard_pages');
+function extend_vendor_dashboard_pages() {
+    if (current_user_can('manage_options')) {
+        return;
+    }
+
+    add_submenu_page(
+        'edit.php?post_type=product',
+        __( 'CSV フォーマット', 'wc-vendors' ),
+        __( 'CSV フォーマット', 'wc-vendors' ),
+        'manage_product',
+        'wcv-vendor-csv-format',
+        'vendor_csv_format_page_callback'
+    );
+}
+
+// CSVフォーマットページのコールバック関数
+function vendor_csv_format_page_callback() {
+    $last_csv_file = get_option('last_csv_file', 'なし');
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'custom_product_data';
+    $results = $wpdb->get_results("SELECT * FROM $table_name");
+
+    ?>
+    <div class="wrap">
+        <h1><?php _e('CSV フォーマット', 'wc-vendors'); ?></h1>
+        <p><?php _e('ここにCSVフォーマットに関する説明や設定を追加できます。', 'wc-vendors'); ?></p>
+        <p><?php _e('最後にアップロードされたCSVファイル: ', 'wc-vendors'); ?><?php echo esc_html($last_csv_file); ?></p>
+        <form method="post" enctype="multipart/form-data">
+            <?php wp_nonce_field('csv_upload_action', 'csv_upload_nonce'); ?>
+            <input type="file" name="csv_file" accept=".csv" required>
+            <input type="submit" name="upload_csv" value="CSVをアップロード" class="button button-primary">
+        </form>
+        <h2><?php _e('フォーマットされた商品データ', 'wc-vendors'); ?></h2>
+        <table class="widefat fixed" cellspacing="0">
+            <thead>
+                <tr>
+                    <th><?php _e('ID', 'wc-vendors'); ?></th>
+                    <th><?php _e('商品ID', 'wc-vendors'); ?></th>
+                    <th><?php _e('SKU', 'wc-vendors'); ?></th>
+                    <th><?php _e('名前', 'wc-vendors'); ?></th>
+                    <th><?php _e('価格', 'wc-vendors'); ?></th>
+                    <th><?php _e('在庫数量', 'wc-vendors'); ?></th>
+                    <th><?php _e('最終更新日', 'wc-vendors'); ?></th>
+                    <th><?php _e('注文日時', 'wc-vendors'); ?></th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($results as $row) : ?>
+                <tr>
+                    <td><?php echo esc_html($row->id); ?></td>
+                    <td><?php echo esc_html($row->product_id); ?></td>
+                    <td><?php echo esc_html($row->sku); ?></td>
+                    <td><?php echo esc_html($row->name); ?></td>
+                    <td><?php echo esc_html($row->price); ?></td>
+                    <td><?php echo esc_html($row->stock_quantity); ?></td>
+                    <td><?php echo esc_html($row->last_updated); ?></td>
+                    <td><?php echo esc_html(date('Y年m月d日 H:i', strtotime($row->post_date))); ?></td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php
+    if (isset($_POST['upload_csv']) && !empty($_FILES['csv_file']['tmp_name'])) {
+        // nonceを確認
+        if (!isset($_POST['csv_upload_nonce']) || !wp_verify_nonce($_POST['csv_upload_nonce'], 'csv_upload_action')) {
+            wp_die('Nonce verification failed.');
+        }
+        update_option('last_csv_file', $_FILES['csv_file']['name']);
+        process_csv_data($_FILES['csv_file']['tmp_name']);
+    }
+}
+
+// WooCommerce 同期ページのコールバック関数
+function vendor_woocommerce_sync_page_callback() {
+    ?>
+    <div class="wrap">
+        <h1><?php _e('WooCommerce 同期', 'wc-vendors'); ?></h1>
+        <p><?php _e('WooCommerce へのデータ同期を行います。', 'wc-vendors'); ?></p>
+        <form method="post">
+            <?php wp_nonce_field('woocommerce_sync_action', 'woocommerce_sync_nonce'); ?>
+            <input type="submit" name="sync_woocommerce" value="WooCommerceに同期" class="button button-primary">
+        </form>
+    </div>
+    <?php
+    if (isset($_POST['sync_woocommerce'])) {
+        // nonceを確認
+        if (!isset($_POST['woocommerce_sync_nonce']) || !wp_verify_nonce($_POST['woocommerce_sync_nonce'], 'woocommerce_sync_action')) {
+            wp_die('Nonce verification failed.');
+        }
+        sync_with_woocommerce();
+    }
 }
 ?>
