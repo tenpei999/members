@@ -294,7 +294,7 @@ function disable_chatbot_output() {
     // チャットボットに関連するテーマスタイルをデキューする
     $themes = ['chatgpt', 'messages', 'timeless']; // 実際のテーマIDのリストを指定します
     foreach ($themes as $themeId) {
-        wp_dequeue_style("mwai_chatbot_theme_$themeId");
+        wp_dequeue_style("mwai_chatbot_theme_chatgpt-css");
     }
 }
 
