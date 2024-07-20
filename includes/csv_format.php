@@ -216,24 +216,29 @@ function sync_with_woocommerce() {
     foreach ($products as $product) {
         // 商品データの準備
         $product_data = array(
-            'post_title' => $product->name,
-            'post_content' => '',
-            'post_status' => 'publish',
-            'post_type' => 'product',
-            'meta_input' => array(
-                '_sku' => $product->sku,
-                '_price' => $product->price,
-                '_stock' => $product->stock_quantity,
-            ),
+            'name' => $product->name,
+            'type' => 'simple',
+            'regular_price' => $product->price,
+            'sku' => $product->sku,
+            'stock_quantity' => $product->stock_quantity,
+            'status' => 'publish',
         );
 
         // WooCommerce に商品を追加または更新
         $existing_product_id = wc_get_product_id_by_sku($product->sku);
         if ($existing_product_id) {
-            $product_data['ID'] = $existing_product_id;
-            wp_update_post($product_data);
+            $product_data['id'] = $existing_product_id;
+            $product = new WC_Product($existing_product_id);
+            foreach ($product_data as $key => $value) {
+                $product->set_prop($key, $value);
+            }
+            $product->save();
         } else {
-            $new_product_id = wp_insert_post($product_data);
+            $new_product = new WC_Product();
+            foreach ($product_data as $key => $value) {
+                $new_product->set_prop($key, $value);
+            }
+            $new_product->save();
         }
     }
     echo '<div class="notice notice-success"><p>WooCommerce への同期が成功しました！</p></div>';
