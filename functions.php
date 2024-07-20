@@ -284,36 +284,17 @@ require get_stylesheet_directory() . '/template-parts/blocks/announcements-block
 
 require get_stylesheet_directory() . '/includes/csv_format.php';
 
-// フロントエンドでのチャットボットポップアップの出力を無効にする
-add_action('wp_enqueue_scripts', 'disable_chatbot_popup', 1);
-function disable_chatbot_popup() {
-    // チャットボットに関連するスクリプトをデキューする
-    wp_dequeue_script('mwai_chatbot');
-    wp_dequeue_script('mwai_highlight'); // オプションで使用されるシンタックスハイライト用スクリプト
+// AI Engine ポップアップを非表示にする
+add_filter( 'mwai_chatbot_params', 'disable_ai_engine_popup' );
 
-    // チャットボットに関連するテーマスタイルをデキューする
-    $themes = ['chatgpt', 'messages', 'timeless']; // 実際のテーマIDのリストを指定します
-    foreach ($themes as $themeId) {
-        wp_dequeue_style("mwai_chatbot_theme_$themeId");
-    }
+function disable_ai_engine_popup( $params ) {
+    // ポップアップを無効化
+    $params['popup']['enabled'] = false;
+    
+    // または、特定の条件下でのみ無効化する場合
+    // if ( is_front_page() ) {
+    //     $params['popup']['enabled'] = false;
+    // }
+
+    return $params;
 }
-
-// チャットボットポップアップの注入を無効にする
-add_action('wp_footer', 'remove_chatbot_popup_injection', 1);
-function remove_chatbot_popup_injection() {
-    remove_action('wp_footer', array('Meow_MWAI_Modules_Chatbot', 'inject_chat'));
-}
-
-// REST API のチャットボットエンドポイントを無効にする
-add_filter('rest_endpoints', 'disable_chatbot_rest_endpoints');
-function disable_chatbot_rest_endpoints($endpoints) {
-    if (isset($endpoints['/mwai-ui/v1/chats/submit'])) {
-        unset($endpoints['/mwai-ui/v1/chats/submit']);
-    }
-    return $endpoints;
-}
-
-// チャットボットのパラメータを空にするフィルター
-add_filter('mwai_chatbot_params', function ($params) {
-    return []; // フロントエンドでチャットボットを表示しないようにするために空のパラメータを返す
-});
