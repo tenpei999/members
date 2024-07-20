@@ -214,6 +214,16 @@ function sync_with_woocommerce() {
     $products = $wpdb->get_results("SELECT * FROM $table_name");
 
     foreach ($products as $product) {
+
+        // カテゴリの取得または作成
+        $category_name = 'NESTSEA仕入れ商品';
+        $category = get_term_by('name', $category_name, 'product_cat');
+        if (!$category) {
+            $category = wp_insert_term($category_name, 'product_cat');
+        }
+        
+        $category_id = is_array($category) ? $category['term_id'] : $category->term_id;
+        
         // 商品データの準備
         $product_data = array(
             'name' => $product->name,
@@ -222,6 +232,12 @@ function sync_with_woocommerce() {
             'sku' => $product->sku,
             'stock_quantity' => $product->stock_quantity,
             'status' => 'publish',
+            'manage_stock' => true,
+            'categories' => array(
+                array(
+                    'id' => $category_id
+                ),
+            ),
         );
 
         // WooCommerce に商品を追加または更新
@@ -232,6 +248,7 @@ function sync_with_woocommerce() {
             $wc_product->set_regular_price($product_data['regular_price']);
             $wc_product->set_stock_quantity($product_data['stock_quantity']);
             $wc_product->set_status($product_data['status']);
+            $wc_product->set_category_ids(wp_list_pluck($product_data['categories'], 'id'));
             $wc_product->save();
             // デバッグ: 更新された商品オブジェクトをログに出力
              error_log("更新された商品オブジェクト (ID: $existing_product_id): " . print_r($wc_product, true));
@@ -242,6 +259,7 @@ function sync_with_woocommerce() {
             $wc_product->set_sku($product_data['sku']);
             $wc_product->set_stock_quantity($product_data['stock_quantity']);
             $wc_product->set_status($product_data['status']);
+            $wc_product->set_category_ids(wp_list_pluck($product_data['categories'], 'id'));
             $wc_product->save();
             // デバッグ: 作成された商品オブジェクトをログに出力
             error_log("作成された商品オブジェクト: " . print_r($wc_product, true));
