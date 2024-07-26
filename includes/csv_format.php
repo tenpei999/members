@@ -325,7 +325,7 @@ function create_custom_product_table() {
         name varchar(255) NOT NULL,
         price decimal(10,2) NOT NULL,
         stock_quantity int(11) NOT NULL,
-        vendor_id bigint(20) NOT NULL,
+        vendor_id bigint(11) NOT NULL,
         last_updated datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
         post_date datetime NOT NULL,
         PRIMARY KEY  (id),
