@@ -22,15 +22,6 @@ if ( $header_search || class_exists( 'WooCommerce' ) ) {
 
 	<div class="<?php zakra_css_class( 'zakra_header_action_class' ); ?> <?php echo esc_attr( $desktop_class ); ?>">
 
-<?php
-global $wpdb;
-$table_name = $wpdb->prefix . 'custom_product_data';
-$results = $wpdb->get_results("DESCRIBE $table_name", ARRAY_A);
-
-echo '<pre>';
-print_r($results);
-echo '</pre>';
-?>
 		<?php echo apply_filters( 'zakra_header_search', zakra_search_icon_menu_item() ); ?>
 
 		<?php if ( class_exists( 'WooCommerce' ) ) : ?>
