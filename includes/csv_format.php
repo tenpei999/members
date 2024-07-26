@@ -3,14 +3,6 @@
 global $current_user;
 $current_user = wp_get_current_user();
 
-global $wpdb;
-$table_name = $wpdb->prefix . 'custom_product_data';
-$results = $wpdb->get_results("DESCRIBE $table_name", ARRAY_A);
-
-echo '<pre>';
-print_r($results);
-echo '</pre>';
-
 // ProductData クラスの定義
 class ProductData {
     public $order_number;
@@ -75,6 +67,8 @@ function is_duplicate_product($product_item_id, $order_date) {
     global $wpdb, $current_user;
     $table_name = $wpdb->prefix . 'custom_product_data';
     $vendor_id = $current_user->ID;
+
+    error_log(print_r($vendor_id, true))
 
     // 日付の形式が適切であることを確認する
     $formatted_date = DateTime::createFromFormat('Y-m-d H:i', $order_date);
