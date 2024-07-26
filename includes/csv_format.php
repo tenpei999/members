@@ -68,7 +68,11 @@ function is_duplicate_product($product_item_id, $order_date) {
     $table_name = $wpdb->prefix . 'custom_product_data';
     $vendor_id = $current_user->ID;
 
-    error_log(print_r($vendor_id, true))
+    error_log(print_r($vendor_id, true));
+
+    // 日付の形式が適切であることを確認する
+    $formatted_date = DateTime::createFromFormat('Y-m-d H:i', $order_date);
+    $order_date_formatted = $formatted_date ? $formatted_date->format('Y-m-d H:i:s') : '';
 
     // ベンダーIDでフィルタリング
     $query = $wpdb->prepare("SELECT COUNT(*) FROM $table_name WHERE product_id = %d AND post_date = %s AND vendor_id = %d", $product_item_id, $order_date, $vendor_id);
