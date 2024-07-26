@@ -2,7 +2,6 @@
 
 global $current_user;
 $current_user = wp_get_current_user();
-DESCRIBE wpb9cd89custom_product_data;
 
 // ProductData クラスの定義
 class ProductData {
@@ -65,7 +64,6 @@ class ProductData {
 
 // WooCommerceの商品IDと注文日時を用いて一意の値を判断する関数
 function is_duplicate_product($product_item_id, $order_date) {
-    
     global $wpdb, $current_user;
     $table_name = $wpdb->prefix . 'custom_product_data';
     $vendor_id = $current_user->ID;
