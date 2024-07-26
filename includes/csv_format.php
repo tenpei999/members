@@ -68,7 +68,7 @@ function is_duplicate_product($product_item_id, $order_date) {
     $table_name = $wpdb->prefix . 'custom_product_data';
     $vendor_id = $current_user->ID;
 
-    error_log(print_r($vendor_id, true))
+    error_log(print_r($vendor_id, true));
 
     // 日付の形式が適切であることを確認する
     $formatted_date = DateTime::createFromFormat('Y-m-d H:i', $order_date);
@@ -79,7 +79,6 @@ function is_duplicate_product($product_item_id, $order_date) {
     $count = $wpdb->get_var($query);
     return $count > 0;
 }
-
 
 // CSVファイルの処理関数
 function process_csv_data($file) {
@@ -177,248 +176,49 @@ function process_csv_data($file) {
         save_formatted_product_data($product_data);
     }
 
-    echo '<div class="notice notice-success"><p>CSVデータのインポートが成功しました！</p></div>';
+    return $new_data;
 }
 
-if (!function_exists('save_formatted_product_data')) {
-    function save_formatted_product_data($data) {
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'custom_product_data';
-
-        // データが ProductData オブジェクトの配列であることを前提とする
-        if (is_array($data)) {
-            foreach ($data as $product_data) {
-                // オブジェクトのプロパティを取得
-                $product_id = $product_data->product_item_id;
-                $sku = $product_data->order_product_management_id;
-                $name = $product_data->order_product_title;
-                $price = $product_data->selling_price_incl_tax;
-                $stock_quantity = $product_data->total_quantity;
-
-                // 文字列形式の日付を DateTime オブジェクトに変換
-                $date_str = $product_data->order_date;
-                $date_obj = DateTime::createFromFormat('Y-m-d H:i', $date_str); // 修正: CSVでのデータ形式に合わせて変更
-                if ($date_obj) {
-                    $post_date = $date_obj->format('Y-m-d H:i:s'); // WooCommerce の日付形式に合わせて変更
-                } else {
-                    $post_date = current_time('mysql'); // フォーマットに失敗した場合の取り込んだ日時
-                }
-
-                // デバッグ: 保存するデータをログに出力
-                error_log("保存するデータ - 商品ID: $product_id, SKU: $sku, 名前: $name, 価格: $price, 在庫数量: $stock_quantity, 注文日時: $post_date");
-
-                // カスタムテーブルにデータを保存
-                $wpdb->replace(
-                    $table_name,
-                    array(
-                        'product_id' => $product_id,
-                        'sku' => $sku,
-                        'name' => $name,
-                        'price' => $price,
-                        'stock_quantity' => $stock_quantity,
-                        'vendor_id' => $product_data->vendor_id,
-                        'last_updated' => current_time('mysql'),
-                        'post_date' => $post_date
-                    ),
-                    array(
-                        '%d', '%s', '%s', '%f', '%d', '%d', '%s', '%s'
-                    )
-                );
-            }
-        } else {
-            error_log('保存するデータが ProductData オブジェクトの配列ではありません。');
-        }
-    }
-}
-
-
-// WooCommerce の商品一覧を取得してログに出力する関数
-function log_woocommerce_products() {
-    $args = array(
-        'limit' => -1, // すべての商品を取得
-        'status' => 'any', // すべてのステータスの商品を含む
-    );
-    $products = wc_get_products($args);
-
-    foreach ($products as $product) {
-        error_log("商品オブジェクト (ID: {$product->get_id()}): " . print_r($product, true));
-    }
-}
-
-// WooCommerce に同期する関数
-function sync_with_woocommerce() {
-    global $wpdb, $current_user;
-    $table_name = $wpdb->prefix . 'custom_product_data';
-    $vendor_id = $current_user->ID;
-    $products = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table_name WHERE vendor_id = %d", $vendor_id));
-
-    foreach ($products as $product) {
-
-        // カテゴリの取得または作成
-        $category_name = 'NESTSEA仕入れ商品';
-        $category = get_term_by('name', $category_name, 'product_cat');
-        if (!$category) {
-            $category = wp_insert_term($category_name, 'product_cat');
-        }
-        
-        $category_id = is_array($category) ? $category['term_id'] : $category->term_id;
-        
-        // 商品データの準備
-        $product_data = array(
-            'name' => $product->name,
-            'type' => 'simple',
-            'regular_price' => $product->price,
-            'sku' => $product->sku,
-            'stock_quantity' => $product->stock_quantity,
-            'status' => 'publish',
-            'manage_stock' => true,
-            'categories' => array(
-                array(
-                    'id' => $category_id
-                ),
-            ),
-        );
-
-        // WooCommerce に商品を追加または更新
-        $existing_product_id = wc_get_product_id_by_sku($product->sku);
-        if ($existing_product_id) {
-            $wc_product = wc_get_product($existing_product_id);
-            $wc_product->set_name($product_data['name']);
-            $wc_product->set_regular_price($product_data['regular_price']);
-            $wc_product->set_stock_quantity($product_data['stock_quantity']);
-            $wc_product->set_status($product_data['status']);
-            $wc_product->set_category_ids(wp_list_pluck($product_data['categories'], 'id'));
-            $wc_product->save();
-            // デバッグ: 更新された商品オブジェクトをログに出力
-             error_log("更新された商品オブジェクト (ID: $existing_product_id): " . print_r($wc_product, true));
-        } else {
-            $wc_product = new WC_Product_Simple();
-            $wc_product->set_name($product_data['name']);
-            $wc_product->set_regular_price($product_data['regular_price']);
-            $wc_product->set_sku($product_data['sku']);
-            $wc_product->set_stock_quantity($product_data['stock_quantity']);
-            $wc_product->set_status($product_data['status']);
-            $wc_product->set_category_ids(wp_list_pluck($product_data['categories'], 'id'));
-            $wc_product->save();
-            // デバッグ: 作成された商品オブジェクトをログに出力
-            error_log("作成された商品オブジェクト: " . print_r($wc_product, true));
-        }
-    }
-    log_woocommerce_products();
-
-    echo '<div class="notice notice-success"><p>WooCommerce への同期が成功しました！</p></div>';
-}
-
-// テーブル作成関数
-function create_custom_product_table() {
+// ProductData を保存する関数
+function save_formatted_product_data($product_data) {
     global $wpdb;
     $table_name = $wpdb->prefix . 'custom_product_data';
-    
-    $charset_collate = $wpdb->get_charset_collate();
 
-    $sql = "CREATE TABLE IF NOT EXISTS $table_name (
-        id mediumint(9) NOT NULL AUTO_INCREMENT,
-        product_id bigint(20) NOT NULL,
-        sku varchar(100) NOT NULL,
-        name varchar(255) NOT NULL,
-        price decimal(10,2) NOT NULL,
-        stock_quantity int(11) NOT NULL,
-        vendor_id bigint(20) NOT NULL,
-        last_updated datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
-        post_date datetime NOT NULL,
-        PRIMARY KEY  (id),
-        UNIQUE KEY product_id (product_id)
-    ) $charset_collate;";
-    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-    dbDelta($sql);
-}
-add_action('init', 'create_custom_product_table');
-
-// 管理メニューにサブメニューを追加
-add_action('admin_menu', 'extend_vendor_dashboard_pages');
-function extend_vendor_dashboard_pages() {
-    if (current_user_can('manage_options')) {
+    // データの重複確認
+    if (is_duplicate_product($product_data->product_item_id, $product_data->order_date)) {
+        error_log("重複したデータ: " . print_r($product_data, true));
         return;
     }
 
-    add_submenu_page(
-        'edit.php?post_type=product',
-        __( 'CSV フォーマット', 'wc-vendors' ),
-        __( 'CSV フォーマット', 'wc-vendors' ),
-        'manage_product',
-        'wcv-vendor-csv-format',
-        'vendor_csv_format_page_callback'
-    );
+    // データをテーブルに保存
+    $wpdb->insert($table_name, array(
+        'vendor_id' => $product_data->vendor_id,
+        'product_id' => $product_data->product_item_id,
+        'post_date' => $product_data->order_date,
+        'order_number' => $product_data->order_number,
+        'order_date' => $product_data->order_date,
+        'supplier_id' => $product_data->supplier_id,
+        'shop_name' => $product_data->shop_name,
+        'product_branch_code' => $product_data->product_branch_code,
+        'order_product_management_id' => $product_data->order_product_management_id,
+        'delivery_address' => $product_data->delivery_address,
+        'delivery_corporate_name' => $product_data->delivery_corporate_name,
+        'department_in_charge' => $product_data->department_in_charge,
+        'delivery_name' => $product_data->delivery_name,
+        'delivery_phone_number' => $product_data->delivery_phone_number,
+        'order_product_title' => $product_data->order_product_title,
+        'order_details' => $product_data->order_details,
+        'quantity_per_set' => $product_data->quantity_per_set,
+        'order_set_quantity' => $product_data->order_set_quantity,
+        'total_quantity' => $product_data->total_quantity,
+        'set_unit_price_incl_tax' => $product_data->set_unit_price_incl_tax,
+        'set_unit_price_excl_tax' => $product_data->set_unit_price_excl_tax,
+        'set_unit_price_tax' => $product_data->set_unit_price_tax,
+        'selling_price_incl_tax' => $product_data->selling_price_incl_tax,
+        'selling_price_excl_tax' => $product_data->selling_price_excl_tax,
+        'selling_price_tax' => $product_data->selling_price_tax,
+        'tax_rate' => $product_data->tax_rate,
+        'jan_code' => $product_data->jan_code,
+        'manufacturer_part_number' => $product_data->manufacturer_part_number,
+    ));
 }
-
-// CSVフォーマットページのコールバック関数
-function vendor_csv_format_page_callback() {
-    global $current_user, $wpdb; 
-    $last_csv_file = get_option('last_csv_file', 'なし');
-    $table_name = $wpdb->prefix . 'custom_product_data';
-    $vendor_id = $current_user->ID;
-    $results = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table_name WHERE vendor_id = %d", $vendor_id));
-
-    ?>
-    <div class="wrap">
-        <h1><?php _e('CSV フォーマット', 'wc-vendors'); ?></h1>
-        <p><?php _e('ここにCSVフォーマットに関する説明や設定を追加できます。', 'wc-vendors'); ?></p>
-        <p><?php _e('最後にアップロードされたCSVファイル: ', 'wc-vendors'); ?><?php echo esc_html($last_csv_file); ?></p>
-        <form method="post" enctype="multipart/form-data">
-            <?php wp_nonce_field('csv_upload_action', 'csv_upload_nonce'); ?>
-            <input type="file" name="csv_file" accept=".csv" required>
-            <input type="submit" name="upload_csv" value="CSVをアップロード" class="button button-primary">
-        </form>
-        <h2><?php _e('フォーマットされた商品データ', 'wc-vendors'); ?></h2>
-        <table class="widefat fixed" cellspacing="0">
-            <thead>
-                <tr>
-                    <th><?php _e('ID', 'wc-vendors'); ?></th>
-                    <th><?php _e('商品ID', 'wc-vendors'); ?></th>
-                    <th><?php _e('SKU', 'wc-vendors'); ?></th>
-                    <th><?php _e('名前', 'wc-vendors'); ?></th>
-                    <th><?php _e('価格', 'wc-vendors'); ?></th>
-                    <th><?php _e('在庫数量', 'wc-vendors'); ?></th>
-                    <th><?php _e('最終更新日', 'wc-vendors'); ?></th>
-                    <th><?php _e('注文日時', 'wc-vendors'); ?></th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($results as $row) : ?>
-                <tr>
-                    <td><?php echo esc_html($row->id); ?></td>
-                    <td><?php echo esc_html($row->product_id); ?></td>
-                    <td><?php echo esc_html($row->sku); ?></td>
-                    <td><?php echo esc_html($row->name); ?></td>
-                    <td><?php echo esc_html($row->price); ?></td>
-                    <td><?php echo esc_html($row->stock_quantity); ?></td>
-                    <td><?php echo esc_html($row->last_updated); ?></td>
-                    <td><?php echo esc_html(date('Y年m月d日 H:i', strtotime($row->post_date))); ?></td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-        <form method="post">
-            <?php wp_nonce_field('woocommerce_sync_action', 'woocommerce_sync_nonce'); ?>
-            <input type="submit" name="sync_woocommerce" value="WooCommerceに同期" class="button button-primary">
-        </form>
-    </div>
-    <?php
-    if (isset($_POST['upload_csv']) && !empty($_FILES['csv_file']['tmp_name'])) {
-        // nonceを確認
-        if (!isset($_POST['csv_upload_nonce']) || !wp_verify_nonce($_POST['csv_upload_nonce'], 'csv_upload_action')) {
-            wp_die('Nonce verification failed.');
-        }
-        update_option('last_csv_file', $_FILES['csv_file']['name']);
-        process_csv_data($_FILES['csv_file']['tmp_name']);
-    }
-
-    if (isset($_POST['sync_woocommerce'])) {
-        // nonceを確認
-        if (!isset($_POST['woocommerce_sync_nonce']) || !wp_verify_nonce($_POST['woocommerce_sync_nonce'], 'woocommerce_sync_action')) {
-            wp_die('Nonce verification failed.');
-        }
-        sync_with_woocommerce();
-    }
-}
-?>
