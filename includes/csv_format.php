@@ -3,14 +3,6 @@
 global $current_user;
 $current_user = wp_get_current_user();
 
-global $wpdb;
-$table_name = $wpdb->prefix . 'custom_product_data';
-$results = $wpdb->get_results("DESCRIBE $table_name", ARRAY_A);
-
-echo '<pre>';
-print_r($results);
-echo '</pre>';
-
 // ProductData クラスの定義
 class ProductData {
     public $order_number;
