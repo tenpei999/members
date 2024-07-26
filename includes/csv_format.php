@@ -68,7 +68,7 @@ function is_duplicate_product($product_item_id, $order_date) {
     $table_name = $wpdb->prefix . 'custom_product_data';
     $vendor_id = $current_user->ID;
 
-    error_log(print_r($vendor_id, true));
+    error_log(print_r("CSVヘッダー: " . $vendor_id, true));
 
     // 日付の形式が適切であることを確認する
     $formatted_date = DateTime::createFromFormat('Y-m-d H:i', $order_date);
