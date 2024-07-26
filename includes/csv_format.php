@@ -3,6 +3,14 @@
 global $current_user;
 $current_user = wp_get_current_user();
 
+global $wpdb;
+$table_name = $wpdb->prefix . 'custom_product_data';
+$results = $wpdb->get_results("DESCRIBE $table_name", ARRAY_A);
+
+echo '<pre>';
+print_r($results);
+echo '</pre>';
+
 // ProductData クラスの定義
 class ProductData {
     public $order_number;
@@ -321,7 +329,7 @@ function create_custom_product_table() {
         name varchar(255) NOT NULL,
         price decimal(10,2) NOT NULL,
         stock_quantity int(11) NOT NULL,
-        vendor_id bigint(20) NOT NULL,  -- ここに vendor_id を追加
+        vendor_id bigint(20) NOT NULL,
         last_updated datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
         post_date datetime NOT NULL,
         PRIMARY KEY  (id),
