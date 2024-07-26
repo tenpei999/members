@@ -1,5 +1,8 @@
 <?php
 
+global $current_user;
+$current_user = wp_get_current_user();
+
 // ProductData クラスの定義
 class ProductData {
     public $order_number;
