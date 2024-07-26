@@ -68,6 +68,10 @@ function is_duplicate_product($product_item_id, $order_date) {
     $table_name = $wpdb->prefix . 'custom_product_data';
     $vendor_id = $current_user->ID;
 
+    // 日付の形式が適切であることを確認する
+    $formatted_date = DateTime::createFromFormat('Y-m-d H:i', $order_date);
+    $order_date_formatted = $formatted_date ? $formatted_date->format('Y-m-d H:i:s') : '';
+
     // ベンダーIDでフィルタリング
     $query = $wpdb->prepare("SELECT COUNT(*) FROM $table_name WHERE product_id = %d AND post_date = %s AND vendor_id = %d", $product_item_id, $order_date, $vendor_id);
     $count = $wpdb->get_var($query);
@@ -148,11 +152,7 @@ function process_csv_data($file) {
         // 日付を適切な形式に変換
         if (isset($data['注文日時'])) {
             $date = DateTime::createFromFormat('Y年m月d日 H:i', $data['注文日時']);
-            if ($date) {
-                $data['order_date'] = $date->format('Y-m-d H:i');
-            } else {
-                $data['order_date'] = '1970-01-01 00:00'; // パースに失敗した場合
-            }
+            $data['order_date'] = $date ? $date->format('Y-m-d H:i') : '1970-01-01 00:00';
         }
 
         // ヘッダーをProductDataにマッピング
@@ -182,45 +182,53 @@ if (!function_exists('save_formatted_product_data')) {
     function save_formatted_product_data($data) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'custom_product_data';
-    
-        foreach ($data as $product_data) {
-            $product_id = $product_data->product_item_id;
-            $sku = $product_data->order_product_management_id;
-            $name = $product_data->order_product_title;
-            $price = $product_data->selling_price_incl_tax;
-            $stock_quantity = $product_data->total_quantity;
-    
-            // 文字列形式の日付を DateTime オブジェクトに変換
-            $date_str = $product_data->order_date;
-            $date_obj = DateTime::createFromFormat('Y年m月d日 H:i', $date_str);
-            if ($date_obj) {
-                $post_date = $date_obj->format('Y-m-d H:i:s');
-            } else {
-                $post_date = current_time('mysql'); // フォーマットに失敗した場合の取り込んだ際の日時
+
+        // データが ProductData オブジェクトの配列であることを前提とする
+        if (is_array($data)) {
+            foreach ($data as $product_data) {
+                // オブジェクトのプロパティを取得
+                $product_id = $product_data->product_item_id;
+                $sku = $product_data->order_product_management_id;
+                $name = $product_data->order_product_title;
+                $price = $product_data->selling_price_incl_tax;
+                $stock_quantity = $product_data->total_quantity;
+
+                // 文字列形式の日付を DateTime オブジェクトに変換
+                $date_str = $product_data->order_date;
+                $date_obj = DateTime::createFromFormat('Y-m-d H:i', $date_str); // 修正: CSVでのデータ形式に合わせて変更
+                if ($date_obj) {
+                    $post_date = $date_obj->format('Y-m-d H:i:s'); // WooCommerce の日付形式に合わせて変更
+                } else {
+                    $post_date = current_time('mysql'); // フォーマットに失敗した場合の取り込んだ日時
+                }
+
+                // デバッグ: 保存するデータをログに出力
+                error_log("保存するデータ - 商品ID: $product_id, SKU: $sku, 名前: $name, 価格: $price, 在庫数量: $stock_quantity, 注文日時: $post_date");
+
+                // カスタムテーブルにデータを保存
+                $wpdb->replace(
+                    $table_name,
+                    array(
+                        'product_id' => $product_id,
+                        'sku' => $sku,
+                        'name' => $name,
+                        'price' => $price,
+                        'stock_quantity' => $stock_quantity,
+                        'vendor_id' => $product_data->vendor_id,
+                        'last_updated' => current_time('mysql'),
+                        'post_date' => $post_date
+                    ),
+                    array(
+                        '%d', '%s', '%s', '%f', '%d', '%d', '%s', '%s'
+                    )
+                );
             }
-    
-            error_log("保存するデータ - 商品ID: $product_id, SKU: $sku, 名前: $name, 価格: $price, 在庫数量: $stock_quantity, 注文日時: $post_date"); // デバッグ情報の追加
-    
-            // カスタムテーブルにデータを保存
-            $wpdb->replace(
-                $table_name,
-                array(
-                    'product_id' => $product_id,
-                    'sku' => $sku,
-                    'name' => $name,
-                    'price' => $price,
-                    'stock_quantity' => $stock_quantity,
-                    'vendor_id' => $product_data->vendor_id,
-                    'last_updated' => current_time('mysql'),
-                    'post_date' => $post_date
-                ),
-                array(
-                    '%d', '%s', '%s', '%f', '%d', '%d', '%s', '%s'
-                )
-            );
+        } else {
+            error_log('保存するデータが ProductData オブジェクトの配列ではありません。');
         }
-    }      
+    }
 }
+
 
 // WooCommerce の商品一覧を取得してログに出力する関数
 function log_woocommerce_products() {
