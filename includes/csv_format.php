@@ -61,15 +61,20 @@ class ProductData {
 
 // WooCommerceの商品IDと注文日時を用いて一意の値を判断する関数
 function is_duplicate_product($product_item_id, $order_date) {
-    global $wpdb;
+    global $wpdb, $current_user;
     $table_name = $wpdb->prefix . 'custom_product_data';
-    $query = $wpdb->prepare("SELECT COUNT(*) FROM $table_name WHERE product_id = %d AND post_date = %s", $product_item_id, $order_date);
+    $vendor_id = $current_user->ID;
+
+    // ベンダーIDでフィルタリング
+    $query = $wpdb->prepare("SELECT COUNT(*) FROM $table_name WHERE product_id = %d AND post_date = %s AND vendor_id = %d", $product_item_id, $order_date, $vendor_id);
     $count = $wpdb->get_var($query);
     return $count > 0;
 }
 
+
 // CSVファイルの処理関数
 function process_csv_data($file) {
+    global $current_user;
     // ファイルの内容をUTF-8に変換
     $file_contents = file_get_contents($file);
     $encoding = mb_detect_encoding($file_contents, 'SJIS-win, EUC-JP, JIS, UTF-8, ASCII');
@@ -159,7 +164,13 @@ function process_csv_data($file) {
 
     // 保存前のデータをログに出力
     error_log("保存前のデータ: " . print_r($new_data, true));
-    save_formatted_product_data($new_data);
+
+    foreach ($new_data as $product_data) {
+        // ベンダーIDを追加
+        $product_data->vendor_id = $current_user->ID;
+        // データを保存
+        save_formatted_product_data($product_data);
+    }
 
     echo '<div class="notice notice-success"><p>CSVデータのインポートが成功しました！</p></div>';
 }
@@ -196,11 +207,12 @@ if (!function_exists('save_formatted_product_data')) {
                     'name' => $name,
                     'price' => $price,
                     'stock_quantity' => $stock_quantity,
+                    'vendor_id' => $product_data->vendor_id,
                     'last_updated' => current_time('mysql'),
-                    'post_date' => $post_date // 変換後の日付を保存
+                    'post_date' => $post_date
                 ),
                 array(
-                    '%d', '%s', '%s', '%f', '%d', '%s', '%s'
+                    '%d', '%s', '%s', '%f', '%d', '%d', '%s', '%s'
                 )
             );
         }
@@ -224,7 +236,8 @@ function log_woocommerce_products() {
 function sync_with_woocommerce() {
     global $wpdb;
     $table_name = $wpdb->prefix . 'custom_product_data';
-    $products = $wpdb->get_results("SELECT * FROM $table_name");
+    $vendor_id = $current_user->ID;
+    $products = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table_name WHERE vendor_id = %d", $vendor_id));
 
     foreach ($products as $product) {
 
@@ -297,6 +310,7 @@ function create_custom_product_table() {
         name varchar(255) NOT NULL,
         price decimal(10,2) NOT NULL,
         stock_quantity int(11) NOT NULL,
+        vendor_id bigint(20) NOT NULL,
         last_updated datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
         post_date datetime NOT NULL,
         PRIMARY KEY  (id),
@@ -330,7 +344,8 @@ function vendor_csv_format_page_callback() {
     $last_csv_file = get_option('last_csv_file', 'なし');
     global $wpdb;
     $table_name = $wpdb->prefix . 'custom_product_data';
-    $results = $wpdb->get_results("SELECT * FROM $table_name");
+    $vendor_id = $current_user->ID;
+    $results = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table_name WHERE vendor_id = %d", $vendor_id));
 
     ?>
     <div class="wrap">
