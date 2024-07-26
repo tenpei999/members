@@ -237,7 +237,7 @@ function log_woocommerce_products() {
 
 // WooCommerce に同期する関数
 function sync_with_woocommerce() {
-    global $wpdb;
+    global $wpdb, $current_user;
     $table_name = $wpdb->prefix . 'custom_product_data';
     $vendor_id = $current_user->ID;
     $products = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table_name WHERE vendor_id = %d", $vendor_id));
