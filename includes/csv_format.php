@@ -321,13 +321,12 @@ function create_custom_product_table() {
         name varchar(255) NOT NULL,
         price decimal(10,2) NOT NULL,
         stock_quantity int(11) NOT NULL,
-        vendor_id bigint(20) NOT NULL,
+        vendor_id bigint(20) NOT NULL,  -- ここに vendor_id を追加
         last_updated datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
         post_date datetime NOT NULL,
         PRIMARY KEY  (id),
         UNIQUE KEY product_id (product_id)
     ) $charset_collate;";
-
     require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
     dbDelta($sql);
 }
