@@ -182,8 +182,9 @@ function process_csv_data($file) {
 
 if (!function_exists('save_formatted_product_data')) {
     function save_formatted_product_data($data) {
-        global $wpdb;
+        global $wpdb, $current_user;
         $table_name = $wpdb->prefix . 'custom_product_data';
+        $vendor_id = $current_user->ID;
 
         // データが ProductData オブジェクトの配列であることを前提とする
         if (is_array($data)) {
@@ -218,7 +219,7 @@ if (!function_exists('save_formatted_product_data')) {
                         'name' => $name,
                         'price' => $price,
                         'stock_quantity' => $stock_quantity,
-                        'vendor_id' => $product_data->vendor_id,
+                        'vendor_id' => $vendor_id,
                         'last_updated' => current_time('mysql'),
                         'post_date' => $post_date
                     ),
@@ -357,6 +358,7 @@ function extend_vendor_dashboard_pages() {
 }
 
 // CSVフォーマットページのコールバック関数
+
 function vendor_csv_format_page_callback() {
     global $current_user, $wpdb; 
     $last_csv_file = get_option('last_csv_file', 'なし');
@@ -388,6 +390,7 @@ function vendor_csv_format_page_callback() {
                     <th><?php _e('在庫数量', 'wc-vendors'); ?></th>
                     <th><?php _e('最終更新日', 'wc-vendors'); ?></th>
                     <th><?php _e('注文日時', 'wc-vendors'); ?></th>
+                    <th><?php _e('ベンダーID', 'wc-vendors'); ?></th>
                 </tr>
             </thead>
             <tbody>
@@ -401,6 +404,7 @@ function vendor_csv_format_page_callback() {
                     <td><?php echo esc_html($row->stock_quantity); ?></td>
                     <td><?php echo esc_html($row->last_updated); ?></td>
                     <td><?php echo esc_html(date('Y年m月d日 H:i', strtotime($row->post_date))); ?></td>
+                    <td><?php echo esc_html($row->vendor_id); ?></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
@@ -428,4 +432,3 @@ function vendor_csv_format_page_callback() {
         sync_with_woocommerce();
     }
 }
-?>
