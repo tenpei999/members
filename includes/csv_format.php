@@ -313,10 +313,13 @@ function sync_with_woocommerce() {
 
 // テーブル作成関数
 function create_custom_product_table() {
-    global $wpdb;
-    $table_name = $wpdb->prefix . 'custom_product_data';
-    
+    global $wpdb, $current_user;
+    $table_name = $wpdb->prefix . 'custom_product_data';    
     $charset_collate = $wpdb->get_charset_collate();
+    $vendor_id = $current_user->ID;
+
+
+    error_log("現在のユーザーID1: " . $vendor_id);
 
     $sql = "CREATE TABLE IF NOT EXISTS $table_name (
         id mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -360,6 +363,8 @@ function vendor_csv_format_page_callback() {
     $table_name = $wpdb->prefix . 'custom_product_data';
     $vendor_id = $current_user->ID;
     $results = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table_name WHERE vendor_id = %d", $vendor_id));
+
+    error_log("現在のユーザーID1: " . $vendor_id);
 
     ?>
     <div class="wrap">
