@@ -432,3 +432,34 @@ function vendor_csv_format_page_callback() {
         sync_with_woocommerce();
     }
 }
+
+function log_vendor_products() {
+    global $wpdb;
+
+    // "Vendor" ロールを持つユーザーを取得
+    $vendor_users = get_users(array(
+        'role' => 'vendor', // ここで 'vendor' を WC Vendors のロール名に置き換えてください
+        'fields' => 'ID'
+    ));
+
+    // 各ベンダーの商品のデータを取得してログに出力
+    foreach ($vendor_users as $vendor_id) {
+        // 商品を取得
+        $products = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}posts WHERE post_type = 'product' AND post_author = %d",
+                $vendor_id
+            )
+        );
+
+        if ($products) {
+            error_log("ベンダーID: $vendor_id の商品データ:");
+            foreach ($products as $product) {
+                error_log("商品ID: {$product->ID}, 商品名: {$product->post_title}, 作成日時: {$product->post_date}");
+            }
+        } else {
+            error_log("ベンダーID: $vendor_id には商品がありません。");
+        }
+    }
+}
+add_action('admin_init', 'log_vendor_products');
