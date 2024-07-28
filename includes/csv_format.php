@@ -433,33 +433,19 @@ function vendor_csv_format_page_callback() {
     }
 }
 
-function log_vendor_products() {
-    global $wpdb;
+function log_product_meta($product_id) {
+    // 商品の全てのメタデータを取得
+    $product_meta = get_post_meta($product_id);
 
-    // "Vendor" ロールを持つユーザーを取得
-    $vendor_users = get_users(array(
-        'role' => 'vendor', // ここで 'vendor' を WC Vendors のロール名に置き換えてください
-        'fields' => 'ID'
-    ));
-
-    // 各ベンダーの商品のデータを取得してログに出力
-    foreach ($vendor_users as $vendor_id) {
-        // 商品を取得
-        $products = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT * FROM {$wpdb->prefix}posts WHERE post_type = 'product' AND post_author = %d",
-                $vendor_id
-            )
-        );
-
-        if ($products) {
-            error_log("ベンダーID: $vendor_id の商品データ:");
-            foreach ($products as $product) {
-                error_log("商品ID: {$product->ID}, 商品名: {$product->post_title}, 作成日時: {$product->post_date}");
-            }
-        } else {
-            error_log("ベンダーID: $vendor_id には商品がありません。");
+    // 商品のメタデータをログに出力
+    error_log("商品ID: $product_id のメタデータ一覧:");
+    foreach ($product_meta as $meta_key => $meta_values) {
+        foreach ($meta_values as $meta_value) {
+            error_log("$meta_key: $meta_value");
         }
     }
 }
-add_action('admin_init', 'log_vendor_products');
+
+// 商品ID 243 のメタデータを出力
+log_product_meta(243);
+
