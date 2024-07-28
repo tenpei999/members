@@ -449,3 +449,4 @@ function log_product_meta($product_id) {
 // 商品ID 243 のメタデータを出力
 log_product_meta(243);
 
+add_action('admin_init', 'log_product_meta(243)');
