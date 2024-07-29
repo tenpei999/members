@@ -311,11 +311,9 @@ function sync_with_woocommerce() {
 
 // テーブル作成関数
 function create_custom_product_table() {
-    global $wpdb, $current_user;
+    global $wpdb;
     $table_name = $wpdb->prefix . 'custom_product_data';    
     $charset_collate = $wpdb->get_charset_collate();
-    $vendor_id = $current_user->ID;
-
 
     error_log("現在のユーザーID1: " . $vendor_id);
 
