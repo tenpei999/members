@@ -315,8 +315,6 @@ function create_custom_product_table() {
     $table_name = $wpdb->prefix . 'custom_product_data';    
     $charset_collate = $wpdb->get_charset_collate();
 
-    error_log("現在のユーザーID1: " . $vendor_id);
-
     $sql = "CREATE TABLE IF NOT EXISTS $table_name (
         id mediumint(9) NOT NULL AUTO_INCREMENT,
         product_id bigint(20) NOT NULL,
