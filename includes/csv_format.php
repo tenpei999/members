@@ -73,7 +73,6 @@ function get_vendor_id_by_product_id($product_id) {
 function is_duplicate_product($product_item_id, $order_date) {
     global $wpdb;
     $table_name = $wpdb->prefix . 'custom_product_data';
-    $vendor_id = $current_user->ID;
 
     // 日付の形式が適切であることを確認する
     $formatted_date = DateTime::createFromFormat('Y-m-d H:i', $order_date);
