@@ -168,11 +168,13 @@ function process_csv_data($file) {
     }
 
     foreach ($new_data as $product_data) {
-        // ベンダーIDを追加
-        $product_data->vendor_id = $current_user->ID;
+        // 商品IDからベンダーIDを取得
+        $vendor_id = get_vendor_id_by_product_id($product_data->product_item_id);
+        $product_data->vendor_id = $vendor_id;
+        
         // データを保存
         save_formatted_product_data($product_data);
-    }
+    }    
 
     echo '<div class="notice notice-success"><p>CSVデータのインポートが成功しました！</p></div>';
 }
