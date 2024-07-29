@@ -432,21 +432,3 @@ function vendor_csv_format_page_callback() {
         sync_with_woocommerce();
     }
 }
-
-function log_product_meta($product_id) {
-    // 商品の全てのメタデータを取得
-    $product_meta = get_post_meta($product_id);
-
-    // 商品のメタデータをログに出力
-    error_log("商品ID: $product_id のメタデータ一覧:");
-    foreach ($product_meta as $meta_key => $meta_values) {
-        foreach ($meta_values as $meta_value) {
-            error_log("$meta_key: $meta_value");
-        }
-    }
-}
-
-// 商品ID 243 のメタデータを出力
-log_product_meta(243);
-
-add_action('admin_init', 'log_product_meta(243)');
