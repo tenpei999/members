@@ -31,6 +31,7 @@ class ProductData {
     public $tax_rate;
     public $jan_code;
     public $manufacturer_part_number;
+    public $vendor_id;
 
     public function __construct($data) {
         $this->order_number = $data['order_number'] ?? '';
@@ -59,22 +60,27 @@ class ProductData {
         $this->tax_rate = $data['tax_rate'] ?? '';
         $this->jan_code = $data['jan_code'] ?? '';
         $this->manufacturer_part_number = $data['manufacturer_part_number'] ?? '';
+        $this->vendor_id = $data['vendor_id'] ?? '';
     }
+}
+
+function get_vendor_id_by_product_id($product_id) {
+    $vendor_id = get_post_field('post_author', $product_id);
+    return $vendor_id;
 }
 
 // WooCommerceの商品IDと注文日時を用いて一意の値を判断する関数
 function is_duplicate_product($product_item_id, $order_date) {
-    global $wpdb, $current_user;
+    global $wpdb;
     $table_name = $wpdb->prefix . 'custom_product_data';
     $vendor_id = $current_user->ID;
-
-    error_log(print_r("CSVヘッダー: " . $vendor_id, true));
 
     // 日付の形式が適切であることを確認する
     $formatted_date = DateTime::createFromFormat('Y-m-d H:i', $order_date);
     $order_date_formatted = $formatted_date ? $formatted_date->format('Y-m-d H:i:s') : '';
 
     // ベンダーIDでフィルタリング
+    $vendor_id = get_vendor_id_by_product_id($product_item_id);
     $query = $wpdb->prepare("SELECT COUNT(*) FROM $table_name WHERE product_id = %d AND post_date = %s AND vendor_id = %d", $product_item_id, $order_date, $vendor_id);
     $count = $wpdb->get_var($query);
     return $count > 0;
@@ -83,7 +89,7 @@ function is_duplicate_product($product_item_id, $order_date) {
 
 // CSVファイルの処理関数
 function process_csv_data($file) {
-    global $current_user;
+    global $wpdb;
     // ファイルの内容をUTF-8に変換
     $file_contents = file_get_contents($file);
     $encoding = mb_detect_encoding($file_contents, 'SJIS-win, EUC-JP, JIS, UTF-8, ASCII');
@@ -96,8 +102,6 @@ function process_csv_data($file) {
 
     // ヘッダー行を取得してカンマで分割
     $header = str_getcsv(array_shift($lines), ',');
-
-    error_log("CSVヘッダー: " . print_r($header, true)); // ヘッダーをデバッグログに出力
 
     // ヘッダーをProductDataのプロパティに変換
     $mapped_header = array(
@@ -129,9 +133,6 @@ function process_csv_data($file) {
         'メーカー品番' => 'manufacturer_part_number',
     );
 
-    // デバッグ: mapped_headerの内容をログに出力
-    error_log("マッピングされたヘッダー: " . print_r($mapped_header, true));
-
     $new_data = array();
     foreach ($lines as $index => $line) {
         if (empty(trim($line))) {
@@ -149,7 +150,6 @@ function process_csv_data($file) {
             error_log("array_combineに失敗しました: " . print_r($row, true));
             continue; // データの結合に失敗した場合はスキップ
         }
-        error_log("読み取ったデータ (行 {$index}): " . print_r($data, true)); // 各行のデータをデバッグログに出力
 
         // 日付を適切な形式に変換
         if (isset($data['注文日時'])) {
@@ -167,9 +167,6 @@ function process_csv_data($file) {
         error_log("ProductData オブジェクト (行 {$index}): " . print_r($new_data[$index], true)); // ProductData オブジェクトのデバッグログ
     }
 
-    // 保存前のデータをログに出力
-    error_log("保存前のデータ: " . print_r($new_data, true));
-
     foreach ($new_data as $product_data) {
         // ベンダーIDを追加
         $product_data->vendor_id = $current_user->ID;
@@ -182,9 +179,8 @@ function process_csv_data($file) {
 
 if (!function_exists('save_formatted_product_data')) {
     function save_formatted_product_data($data) {
-        global $wpdb, $current_user;
+        global $wpdb;
         $table_name = $wpdb->prefix . 'custom_product_data';
-        $vendor_id = $current_user->ID;
 
         // データが ProductData オブジェクトの配列であることを前提とする
         if (is_array($data)) {
@@ -196,7 +192,7 @@ if (!function_exists('save_formatted_product_data')) {
                 $name = $product_data->order_product_title;
                 $price = $product_data->selling_price_incl_tax;
                 $stock_quantity = $product_data->total_quantity;
-                $vendor_id = $product_data->vendor_id; // 追加: vendor_id の取得
+                $vendor_id = $product_data->vendor_id;
 
                 // 文字列形式の日付を DateTime オブジェクトに変換
                 $date_str = $product_data->order_date;
