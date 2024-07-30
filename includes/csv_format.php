@@ -175,18 +175,19 @@ if (!function_exists('save_formatted_product_data')) {
             $name = $product_data->order_product_title;
             $price = $product_data->selling_price_incl_tax;
             $stock_quantity = $product_data->total_quantity;
-    
-            // 文字列形式の日付を DateTime オブジェクトに変換
+            
+            // 商品に関連するユーザーIDを取得（ここで取得するユーザーIDを vender_id に設定）
+            $vendor_id = get_post_field('post_author', $product_id);
+
+            // 日付の変換
             $date_str = $product_data->order_date;
             $date_obj = DateTime::createFromFormat('Y年m月d日 H:i', $date_str);
             if ($date_obj) {
                 $post_date = $date_obj->format('Y-m-d H:i:s');
             } else {
-                $post_date = current_time('mysql'); // フォーマットに失敗した場合の取り込んだ際の日時
+                $post_date = current_time('mysql');
             }
-    
-            error_log("保存するデータ - 商品ID: $product_id, SKU: $sku, 名前: $name, 価格: $price, 在庫数量: $stock_quantity, 注文日時: $post_date"); // デバッグ情報の追加
-    
+
             // カスタムテーブルにデータを保存
             $wpdb->replace(
                 $table_name,
@@ -197,10 +198,11 @@ if (!function_exists('save_formatted_product_data')) {
                     'price' => $price,
                     'stock_quantity' => $stock_quantity,
                     'last_updated' => current_time('mysql'),
-                    'post_date' => $post_date // 変換後の日付を保存
+                    'post_date' => $post_date,
+                    'vender_id' => $vendor_id 
                 ),
                 array(
-                    '%d', '%s', '%s', '%f', '%d', '%s', '%s'
+                    '%d', '%s', '%s', '%f', '%d', '%s', '%s', '%d'
                 )
             );
         }
