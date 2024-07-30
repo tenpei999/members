@@ -173,6 +173,8 @@ function process_csv_data($file) {
         save_formatted_product_data($product_data);
     }    
 
+    error_log("ベンダーID " . print_r($vendor_id, true));
+
     echo '<div class="notice notice-success"><p>CSVデータのインポートが成功しました！</p></div>';
 }
 
