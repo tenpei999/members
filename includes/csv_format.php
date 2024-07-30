@@ -169,9 +169,16 @@ if (!function_exists('save_formatted_product_data')) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'custom_product_data';
 
-        // admin_vender_idカラムを追加
-        $wpdb->query("ALTER TABLE $table_name ADD COLUMN IF NOT EXISTS admin_vendor_id INT(11) NOT NULL");
-        
+        // Check if the column 'admin_vendor_id' exists
+        $column_exists = $wpdb->get_results($wpdb->prepare(
+            "SHOW COLUMNS FROM $table_name LIKE %s",
+            'admin_vendor_id'
+        ));
+
+        if (empty($column_exists)) {
+            // Column does not exist, add it
+            $wpdb->query("ALTER TABLE $table_name ADD COLUMN admin_vendor_id INT(11) NOT NULL");
+        }        
     
         foreach ($data as $product_data) {
             $product_id = $product_data->product_item_id;
