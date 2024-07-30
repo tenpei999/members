@@ -244,7 +244,7 @@ function log_woocommerce_products() {
 }
 
 // WooCommerce に同期する関数
-function sync_with_woocommerce() {
+function sync_with_woocommerce($product_id) {
     global $wpdb;
     $table_name = $wpdb->prefix . 'custom_product_data';
     $vendor_id = get_post_field('post_author', $product_id);
@@ -365,7 +365,7 @@ function vendor_csv_format_page_callback($product_id) {
      }    
 
     ?>
-    
+
     <div class="wrap">
         <h1><?php _e('CSV フォーマット', 'wc-vendors'); ?></h1>
         <p><?php _e('ここにCSVフォーマットに関する説明や設定を追加できます。', 'wc-vendors'); ?></p>
