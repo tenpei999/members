@@ -31,7 +31,6 @@ class ProductData {
     public $tax_rate;
     public $jan_code;
     public $manufacturer_part_number;
-    public $vendor_id;
 
     public function __construct($data) {
         $this->order_number = $data['order_number'] ?? '';
@@ -60,7 +59,6 @@ class ProductData {
         $this->tax_rate = $data['tax_rate'] ?? '';
         $this->jan_code = $data['jan_code'] ?? '';
         $this->manufacturer_part_number = $data['manufacturer_part_number'] ?? '';
-        $this->vendor_id = $data['vendor_id'] ?? '';
     }
 }
 
