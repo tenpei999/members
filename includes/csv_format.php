@@ -170,7 +170,7 @@ if (!function_exists('save_formatted_product_data')) {
         $table_name = $wpdb->prefix . 'custom_product_data';
 
         // admin_vender_idカラムを追加
-        $wpdb->query("ALTER TABLE $table_name ADD COLUMN IF NOT EXISTS admin_vender_id INT(11) NOT NULL");
+        $wpdb->query("ALTER TABLE $table_name ADD COLUMN IF NOT EXISTS admin_vendor_id INT(11) NOT NULL");
         
     
         foreach ($data as $product_data) {
@@ -203,7 +203,7 @@ if (!function_exists('save_formatted_product_data')) {
                     'stock_quantity' => $stock_quantity,
                     'last_updated' => current_time('mysql'),
                     'post_date' => $post_date,
-                    'admin_vender_id' => $admin_vendor_id 
+                    'admin_vendor_id' => $admin_vendor_id 
                 ),
                 array(
                     '%d', '%s', '%s', '%f', '%d', '%s', '%s', '%d'
