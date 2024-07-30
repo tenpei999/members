@@ -247,9 +247,9 @@ function log_woocommerce_products() {
 
 // WooCommerce に同期する関数
 function sync_with_woocommerce() {
-    global $wpdb, $current_user;
+    global $wpdb;
     $table_name = $wpdb->prefix . 'custom_product_data';
-    $vendor_id = $current_user->ID;
+    $vendor_id = get_post_field('post_author', $product_id);
     $products = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table_name WHERE vendor_id = %d", $vendor_id));
 
     foreach ($products as $product) {
@@ -353,10 +353,10 @@ function extend_vendor_dashboard_pages() {
 // CSVフォーマットページのコールバック関数
 
 function vendor_csv_format_page_callback() {
-    global $current_user, $wpdb; 
+    global $wpdb; 
     $last_csv_file = get_option('last_csv_file', 'なし');
     $table_name = $wpdb->prefix . 'custom_product_data';
-    $vendor_id = $current_user->ID;
+    $vendor_id = get_post_field('post_author', $product_id);
     $results = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table_name WHERE vendor_id = %d", $vendor_id));
 
     error_log("現在のユーザーID1: " . $vendor_id);
