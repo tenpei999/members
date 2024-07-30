@@ -63,7 +63,16 @@ class ProductData {
 }
 
 function get_vendor_id_by_product_id($product_id) {
-    $vendor_id = get_post_field('post_author', $product_id);
+    global $wpdb;
+
+    // Query to get the vendor ID associated with the product
+    $vendor_id = $wpdb->get_var(
+        $wpdb->prepare(
+            "SELECT vendor_id FROM {$wpdb->prefix}wc_product_vendors WHERE product_id = %d",
+            $product_id
+        )
+    );
+
     return $vendor_id;
 }
 
