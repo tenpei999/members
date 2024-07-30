@@ -355,11 +355,17 @@ function vendor_csv_format_page_callback($product_id) {
     $last_csv_file = get_option('last_csv_file', 'なし');
     $table_name = $wpdb->prefix . 'custom_product_data';
     $vendor_id = get_post_field('post_author', $product_id);
-    $results = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table_name WHERE vendor_id = %d", $vendor_id));
 
-    error_log("現在のユーザーID1: " . $vendor_id);
+     // プロダクトIDからベンダーIDを取得
+     $vendor_id = get_post_field('post_author', $product_id);
+     if ($vendor_id) {
+         $results = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table_name WHERE vendor_id = %d", $vendor_id));
+     } else {
+         $results = array();
+     }    
 
     ?>
+    
     <div class="wrap">
         <h1><?php _e('CSV フォーマット', 'wc-vendors'); ?></h1>
         <p><?php _e('ここにCSVフォーマットに関する説明や設定を追加できます。', 'wc-vendors'); ?></p>
