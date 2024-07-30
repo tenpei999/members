@@ -350,7 +350,7 @@ function extend_vendor_dashboard_pages() {
 
 // CSVフォーマットページのコールバック関数
 
-function vendor_csv_format_page_callback() {
+function vendor_csv_format_page_callback($product_id) {
     global $wpdb; 
     $last_csv_file = get_option('last_csv_file', 'なし');
     $table_name = $wpdb->prefix . 'custom_product_data';
