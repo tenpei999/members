@@ -131,6 +131,11 @@ function process_csv_data($file) {
     );
 
     $new_data = array();
+
+    if (!is_array($new_data)) {
+        error_log("新しいデータが配列ではありません: " . print_r($new_data, true));
+    }
+    
     foreach ($lines as $index => $line) {
         if (empty(trim($line))) {
             continue; // 空行をスキップ
@@ -172,8 +177,6 @@ function process_csv_data($file) {
         // データを保存
         save_formatted_product_data($product_data);
     }    
-
-    error_log("ベンダーID " . print_r($vendor_id, true));
 
     echo '<div class="notice notice-success"><p>CSVデータのインポートが成功しました！</p></div>';
 }
