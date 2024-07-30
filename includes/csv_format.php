@@ -179,7 +179,9 @@ function process_csv_data($file) {
         save_formatted_product_data($product_data);
     }
     
-    echo '<div class="notice notice-success"><p>CSVデータのインポートが成功しました！</p></div>';    
+    echo '<div class="notice notice-success"><p>CSVデータのインポートが成功しました！</p></div>';
+    
+}
 
 if (!function_exists('save_formatted_product_data')) {
     function save_formatted_product_data($data) {
