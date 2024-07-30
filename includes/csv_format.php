@@ -141,46 +141,45 @@ function process_csv_data($file) {
             error_log("行の数がヘッダーの数と一致しません: " . print_r($row, true));
             continue; // ヘッダーと行の数が一致しない場合スキップ
         }
-
+    
         // ヘッダーを使用してデータ行にキーを設定
         $data = array_combine($header, $row);
         if ($data === FALSE) {
             error_log("array_combineに失敗しました: " . print_r($row, true));
             continue; // データの結合に失敗した場合はスキップ
         }
-
+    
         // 日付を適切な形式に変換
         if (isset($data['注文日時'])) {
             $date = DateTime::createFromFormat('Y年m月d日 H:i', $data['注文日時']);
             $data['order_date'] = $date ? $date->format('Y-m-d H:i') : '1970-01-01 00:00';
         }
-
+    
         // ヘッダーをProductDataにマッピング
         $mapped_data = [];
         foreach ($mapped_header as $csv_key => $property) {
             $mapped_data[$property] = $data[$csv_key] ?? '';
         }
-
+    
         $new_data[$index] = new ProductData($mapped_data);
-
-        if (!is_array($new_data)) {
-            error_log("新しいデータが配列ではありません: " . print_r($new_data, true));
-        }
         
-        error_log("ProductData オブジェクト (行 {$index}): " . print_r($new_data[$index], true)); // ProductData オブジェクトのデバッグログ
+        // デバッグ: ProductData オブジェクトをログに出力
+        error_log("ProductData オブジェクト (行 {$index}): " . print_r($new_data[$index], true)); 
     }
-
+    
     foreach ($new_data as $product_data) {
         // 商品IDからベンダーIDを取得
         $vendor_id = get_vendor_id_by_product_id($product_data->product_item_id);
         $product_data->vendor_id = $vendor_id;
+    
+        // デバッグ: ベンダーIDをログに出力
+        error_log("ベンダーID (商品ID: {$product_data->product_item_id}): " . print_r($vendor_id, true));
         
         // データを保存
         save_formatted_product_data($product_data);
-    }    
-
-    echo '<div class="notice notice-success"><p>CSVデータのインポートが成功しました！</p></div>';
-}
+    }
+    
+    echo '<div class="notice notice-success"><p>CSVデータのインポートが成功しました！</p></div>';    
 
 if (!function_exists('save_formatted_product_data')) {
     function save_formatted_product_data($data) {
