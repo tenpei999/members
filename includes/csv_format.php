@@ -1,8 +1,5 @@
 <?php
 
-global $current_user;
-$current_user = wp_get_current_user();
-
 // ProductData クラスの定義
 class ProductData {
     public $order_number;
@@ -62,40 +59,17 @@ class ProductData {
     }
 }
 
-function get_vendor_id_by_product_id($product_id) {
-    global $wpdb;
-
-    // Query to get the vendor ID associated with the product
-    $vendor_id = $wpdb->get_var(
-        $wpdb->prepare(
-            "SELECT vendor_id FROM {$wpdb->prefix}wc_product_vendors WHERE product_id = %d",
-            $product_id
-        )
-    );
-
-    return $vendor_id;
-}
-
 // WooCommerceの商品IDと注文日時を用いて一意の値を判断する関数
 function is_duplicate_product($product_item_id, $order_date) {
     global $wpdb;
     $table_name = $wpdb->prefix . 'custom_product_data';
-
-    // 日付の形式が適切であることを確認する
-    $formatted_date = DateTime::createFromFormat('Y-m-d H:i', $order_date);
-    $order_date_formatted = $formatted_date ? $formatted_date->format('Y-m-d H:i:s') : '';
-
-    // ベンダーIDでフィルタリング
-    $vendor_id = get_vendor_id_by_product_id($product_item_id);
-    $query = $wpdb->prepare("SELECT COUNT(*) FROM $table_name WHERE product_id = %d AND post_date = %s AND vendor_id = %d", $product_item_id, $order_date, $vendor_id);
+    $query = $wpdb->prepare("SELECT COUNT(*) FROM $table_name WHERE product_id = %d AND post_date = %s", $product_item_id, $order_date);
     $count = $wpdb->get_var($query);
     return $count > 0;
 }
 
-
 // CSVファイルの処理関数
 function process_csv_data($file) {
-    global $wpdb;
     // ファイルの内容をUTF-8に変換
     $file_contents = file_get_contents($file);
     $encoding = mb_detect_encoding($file_contents, 'SJIS-win, EUC-JP, JIS, UTF-8, ASCII');
@@ -108,6 +82,8 @@ function process_csv_data($file) {
 
     // ヘッダー行を取得してカンマで分割
     $header = str_getcsv(array_shift($lines), ',');
+
+    error_log("CSVヘッダー: " . print_r($header, true)); // ヘッダーをデバッグログに出力
 
     // ヘッダーをProductDataのプロパティに変換
     $mapped_header = array(
@@ -139,8 +115,10 @@ function process_csv_data($file) {
         'メーカー品番' => 'manufacturer_part_number',
     );
 
-    $new_data = array();
+    // デバッグ: mapped_headerの内容をログに出力
+    error_log("マッピングされたヘッダー: " . print_r($mapped_header, true));
 
+    $new_data = array();
     foreach ($lines as $index => $line) {
         if (empty(trim($line))) {
             continue; // 空行をスキップ
@@ -150,101 +128,84 @@ function process_csv_data($file) {
             error_log("行の数がヘッダーの数と一致しません: " . print_r($row, true));
             continue; // ヘッダーと行の数が一致しない場合スキップ
         }
-    
+
         // ヘッダーを使用してデータ行にキーを設定
         $data = array_combine($header, $row);
         if ($data === FALSE) {
             error_log("array_combineに失敗しました: " . print_r($row, true));
             continue; // データの結合に失敗した場合はスキップ
         }
-    
+        error_log("読み取ったデータ (行 {$index}): " . print_r($data, true)); // 各行のデータをデバッグログに出力
+
         // 日付を適切な形式に変換
         if (isset($data['注文日時'])) {
             $date = DateTime::createFromFormat('Y年m月d日 H:i', $data['注文日時']);
-            $data['order_date'] = $date ? $date->format('Y-m-d H:i') : '1970-01-01 00:00';
+            if ($date) {
+                $data['order_date'] = $date->format('Y-m-d H:i');
+            } else {
+                $data['order_date'] = '1970-01-01 00:00'; // パースに失敗した場合
+            }
         }
-    
+
         // ヘッダーをProductDataにマッピング
         $mapped_data = [];
         foreach ($mapped_header as $csv_key => $property) {
             $mapped_data[$property] = $data[$csv_key] ?? '';
         }
-    
+
         $new_data[$index] = new ProductData($mapped_data);
-        
-        // デバッグ: ProductData オブジェクトをログに出力
-        error_log("ProductData オブジェクト (行 {$index}): " . print_r($new_data[$index], true)); 
+        error_log("ProductData オブジェクト (行 {$index}): " . print_r($new_data[$index], true)); // ProductData オブジェクトのデバッグログ
     }
-    
-    foreach ($new_data as $product_data) {
-        // 商品IDからベンダーIDを取得
-        $vendor_id = get_vendor_id_by_product_id($product_data->product_item_id);
-        $product_data->vendor_id = $vendor_id;
-    
-        // デバッグ: ベンダーIDをログに出力
-        error_log("ベンダーID (商品ID: {$product_data->product_item_id}): " . print_r($vendor_id, true));
-        
-        // データを保存
-        save_formatted_product_data($product_data);
-    }
-    
+
+    // 保存前のデータをログに出力
+    error_log("保存前のデータ: " . print_r($new_data, true));
+    save_formatted_product_data($new_data);
+
     echo '<div class="notice notice-success"><p>CSVデータのインポートが成功しました！</p></div>';
-    
 }
 
 if (!function_exists('save_formatted_product_data')) {
     function save_formatted_product_data($data) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'custom_product_data';
-
-        // データが ProductData オブジェクトの配列であることを前提とする
-        if (is_array($data)) {
-            foreach ($data as $product_data) {
-                // オブジェクトのプロパティを取得
-                
-                $product_id = $product_data->product_item_id;
-                $sku = $product_data->order_product_management_id;
-                $name = $product_data->order_product_title;
-                $price = $product_data->selling_price_incl_tax;
-                $stock_quantity = $product_data->total_quantity;
-                $vendor_id = $product_data->vendor_id;
-
-                // 文字列形式の日付を DateTime オブジェクトに変換
-                $date_str = $product_data->order_date;
-                $date_obj = DateTime::createFromFormat('Y-m-d H:i', $date_str); // 修正: CSVでのデータ形式に合わせて変更
-                if ($date_obj) {
-                    $post_date = $date_obj->format('Y-m-d H:i:s'); // WooCommerce の日付形式に合わせて変更
-                } else {
-                    $post_date = current_time('mysql'); // フォーマットに失敗した場合の取り込んだ日時
-                }
-
-               // デバッグ: 保存するデータをログに出力
-               error_log("保存するデータ - 商品ID: $product_id, SKU: $sku, 名前: $name, 価格: $price, 在庫数量: $stock_quantity, ベンダーID: $vendor_id, 注文日時: $post_date");
-
-                // カスタムテーブルにデータを保存
-                $wpdb->replace(
-                    $table_name,
-                    array(
-                        'product_id' => $product_id,
-                        'sku' => $sku,
-                        'name' => $name,
-                        'price' => $price,
-                        'stock_quantity' => $stock_quantity,
-                        'vendor_id' => $vendor_id,
-                        'last_updated' => current_time('mysql'),
-                        'post_date' => $post_date
-                    ),
-                    array(
-                        '%d', '%s', '%s', '%f', '%d', '%d', '%s', '%s'
-                    )
-                );
+    
+        foreach ($data as $product_data) {
+            $product_id = $product_data->product_item_id;
+            $sku = $product_data->order_product_management_id;
+            $name = $product_data->order_product_title;
+            $price = $product_data->selling_price_incl_tax;
+            $stock_quantity = $product_data->total_quantity;
+    
+            // 文字列形式の日付を DateTime オブジェクトに変換
+            $date_str = $product_data->order_date;
+            $date_obj = DateTime::createFromFormat('Y年m月d日 H:i', $date_str);
+            if ($date_obj) {
+                $post_date = $date_obj->format('Y-m-d H:i:s');
+            } else {
+                $post_date = current_time('mysql'); // フォーマットに失敗した場合の取り込んだ際の日時
             }
-        } else {
-            error_log('保存するデータが ProductData オブジェクトの配列ではありません。');
+    
+            error_log("保存するデータ - 商品ID: $product_id, SKU: $sku, 名前: $name, 価格: $price, 在庫数量: $stock_quantity, 注文日時: $post_date"); // デバッグ情報の追加
+    
+            // カスタムテーブルにデータを保存
+            $wpdb->replace(
+                $table_name,
+                array(
+                    'product_id' => $product_id,
+                    'sku' => $sku,
+                    'name' => $name,
+                    'price' => $price,
+                    'stock_quantity' => $stock_quantity,
+                    'last_updated' => current_time('mysql'),
+                    'post_date' => $post_date // 変換後の日付を保存
+                ),
+                array(
+                    '%d', '%s', '%s', '%f', '%d', '%s', '%s'
+                )
+            );
         }
-    }
+    }      
 }
-
 
 // WooCommerce の商品一覧を取得してログに出力する関数
 function log_woocommerce_products() {
@@ -260,11 +221,10 @@ function log_woocommerce_products() {
 }
 
 // WooCommerce に同期する関数
-function sync_with_woocommerce($product_id) {
+function sync_with_woocommerce() {
     global $wpdb;
     $table_name = $wpdb->prefix . 'custom_product_data';
-    $vendor_id = get_post_field('post_author', $product_id);
-    $products = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table_name WHERE vendor_id = %d", $vendor_id));
+    $products = $wpdb->get_results("SELECT * FROM $table_name");
 
     foreach ($products as $product) {
 
@@ -326,7 +286,8 @@ function sync_with_woocommerce($product_id) {
 // テーブル作成関数
 function create_custom_product_table() {
     global $wpdb;
-    $table_name = $wpdb->prefix . 'custom_product_data';    
+    $table_name = $wpdb->prefix . 'custom_product_data';
+    
     $charset_collate = $wpdb->get_charset_collate();
 
     $sql = "CREATE TABLE IF NOT EXISTS $table_name (
@@ -336,12 +297,12 @@ function create_custom_product_table() {
         name varchar(255) NOT NULL,
         price decimal(10,2) NOT NULL,
         stock_quantity int(11) NOT NULL,
-        vendor_id bigint(11) NOT NULL,
         last_updated datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
         post_date datetime NOT NULL,
         PRIMARY KEY  (id),
         UNIQUE KEY product_id (product_id)
     ) $charset_collate;";
+
     require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
     dbDelta($sql);
 }
@@ -365,23 +326,13 @@ function extend_vendor_dashboard_pages() {
 }
 
 // CSVフォーマットページのコールバック関数
-
-function vendor_csv_format_page_callback($product_id) {
-    global $wpdb; 
+function vendor_csv_format_page_callback() {
     $last_csv_file = get_option('last_csv_file', 'なし');
+    global $wpdb;
     $table_name = $wpdb->prefix . 'custom_product_data';
-    $vendor_id = get_post_field('post_author', $product_id);
-
-     // プロダクトIDからベンダーIDを取得
-     $vendor_id = get_post_field('post_author', $product_id);
-     if ($vendor_id) {
-         $results = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table_name WHERE vendor_id = %d", $vendor_id));
-     } else {
-         $results = array();
-     }    
+    $results = $wpdb->get_results("SELECT * FROM $table_name");
 
     ?>
-
     <div class="wrap">
         <h1><?php _e('CSV フォーマット', 'wc-vendors'); ?></h1>
         <p><?php _e('ここにCSVフォーマットに関する説明や設定を追加できます。', 'wc-vendors'); ?></p>
@@ -403,7 +354,6 @@ function vendor_csv_format_page_callback($product_id) {
                     <th><?php _e('在庫数量', 'wc-vendors'); ?></th>
                     <th><?php _e('最終更新日', 'wc-vendors'); ?></th>
                     <th><?php _e('注文日時', 'wc-vendors'); ?></th>
-                    <th><?php _e('ベンダーID', 'wc-vendors'); ?></th>
                 </tr>
             </thead>
             <tbody>
@@ -417,7 +367,6 @@ function vendor_csv_format_page_callback($product_id) {
                     <td><?php echo esc_html($row->stock_quantity); ?></td>
                     <td><?php echo esc_html($row->last_updated); ?></td>
                     <td><?php echo esc_html(date('Y年m月d日 H:i', strtotime($row->post_date))); ?></td>
-                    <td><?php echo esc_html($row->vendor_id); ?></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
@@ -445,3 +394,4 @@ function vendor_csv_format_page_callback($product_id) {
         sync_with_woocommerce();
     }
 }
+?>
