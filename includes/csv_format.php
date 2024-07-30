@@ -168,6 +168,9 @@ if (!function_exists('save_formatted_product_data')) {
     function save_formatted_product_data($data) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'custom_product_data';
+
+        // vender_idカラムを追加
+        $wpdb->query("ALTER TABLE $table_name ADD admin_vender_id INT(11) NOT NULL");
     
         foreach ($data as $product_data) {
             $product_id = $product_data->product_item_id;
@@ -177,7 +180,7 @@ if (!function_exists('save_formatted_product_data')) {
             $stock_quantity = $product_data->total_quantity;
             
             // 商品に関連するユーザーIDを取得（ここで取得するユーザーIDを vender_id に設定）
-            $vendor_id = get_post_field('post_author', $product_id);
+            $admin_vender_id = get_post_field('post_author', $product_id);
 
             // 日付の変換
             $date_str = $product_data->order_date;
@@ -199,7 +202,7 @@ if (!function_exists('save_formatted_product_data')) {
                     'stock_quantity' => $stock_quantity,
                     'last_updated' => current_time('mysql'),
                     'post_date' => $post_date,
-                    'vender_id' => $vendor_id 
+                    'admin_vender_id' => $admin_vendor_id 
                 ),
                 array(
                     '%d', '%s', '%s', '%f', '%d', '%s', '%s', '%d'
