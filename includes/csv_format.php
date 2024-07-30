@@ -132,10 +132,6 @@ function process_csv_data($file) {
 
     $new_data = array();
 
-    if (!is_array($new_data)) {
-        error_log("新しいデータが配列ではありません: " . print_r($new_data, true));
-    }
-    
     foreach ($lines as $index => $line) {
         if (empty(trim($line))) {
             continue; // 空行をスキップ
@@ -166,6 +162,11 @@ function process_csv_data($file) {
         }
 
         $new_data[$index] = new ProductData($mapped_data);
+
+        if (!is_array($new_data)) {
+            error_log("新しいデータが配列ではありません: " . print_r($new_data, true));
+        }
+        
         error_log("ProductData オブジェクト (行 {$index}): " . print_r($new_data[$index], true)); // ProductData オブジェクトのデバッグログ
     }
 
