@@ -70,6 +70,24 @@ function is_duplicate_product($product_item_id, $order_date) {
 
 // CSVファイルの処理関数
 function process_csv_data($file) {
+    // ユーザー情報の取得
+    $current_user = wp_get_current_user();
+    $user_id = $current_user->ID;
+
+    // ユーザーごとのディレクトリを作成
+    $upload_dir = wp_upload_dir();
+    $user_dir = $upload_dir['basedir'] . "/user_csv_files/{$user_id}/";
+    if (!file_exists($user_dir)) {
+        wp_mkdir_p($user_dir);
+    } 
+
+    // 保存するファイルのパスを決定
+    $filename = basename($file);
+    $save_path = $user_dir . $filename;
+
+    // CSVファイルを保存
+    move_uploaded_file($file, $save_path);    
+    
     // ファイルの内容をUTF-8に変換
     $file_contents = file_get_contents($file);
     $encoding = mb_detect_encoding($file_contents, 'SJIS-win, EUC-JP, JIS, UTF-8, ASCII');
