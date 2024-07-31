@@ -84,6 +84,7 @@ function process_csv_data($file) {
     // 保存するファイルのパスを決定
     $filename = basename($file);
     $save_path = $user_dir . $filename;
+
     // CSVファイルを保存
     if (move_uploaded_file($file, $save_path)) {
         // ファイルの内容をUTF-8に変換
