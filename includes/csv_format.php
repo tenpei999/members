@@ -86,100 +86,102 @@ function process_csv_data($file) {
     $save_path = $user_dir . $filename;
 
     // CSVファイルを保存
-    move_uploaded_file($file, $save_path);    
-    
-    // ファイルの内容をUTF-8に変換
-    $file_contents = file_get_contents($file);
-    $encoding = mb_detect_encoding($file_contents, 'SJIS-win, EUC-JP, JIS, UTF-8, ASCII');
-    if ($encoding != 'UTF-8') {
-        $file_contents = mb_convert_encoding($file_contents, 'UTF-8', $encoding);
-    }
-
-    // ファイル内容を行ごとに分割
-    $lines = preg_split('/\r\n|\r|\n/', $file_contents);
-
-    // ヘッダー行を取得してカンマで分割
-    $header = str_getcsv(array_shift($lines), ',');
-
-    error_log("CSVヘッダー: " . print_r($header, true)); // ヘッダーをデバッグログに出力
-
-    // ヘッダーをProductDataのプロパティに変換
-    $mapped_header = array(
-        '注文番号' => 'order_number',
-        '注文日時' => 'order_date',
-        'サプライヤーID' => 'supplier_id',
-        'ショップ名' => 'shop_name',
-        '商品管理枝番号' => 'product_branch_code',
-        '商品アイテムID' => 'product_item_id',
-        '注文時商品管理ID' => 'order_product_management_id',
-        '送付先住所' => 'delivery_address',
-        '送付先法人名' => 'delivery_corporate_name',
-        '担当部署' => 'department_in_charge',
-        '送付先氏名' => 'delivery_name',
-        '送付先電話番号' => 'delivery_phone_number',
-        '注文時商品タイトル' => 'order_product_title',
-        '注文時内訳' => 'order_details',
-        'セット毎数量' => 'quantity_per_set',
-        '注文セット数量' => 'order_set_quantity',
-        '合計数量' => 'total_quantity',
-        'セット単価（税込）' => 'set_unit_price_incl_tax',
-        'セット単価（税抜）' => 'set_unit_price_excl_tax',
-        'セット単価（消費税額）' => 'set_unit_price_tax',
-        '販売価格（税込）' => 'selling_price_incl_tax',
-        '販売価格（税抜）' => 'selling_price_excl_tax',
-        '販売価格（消費税額）' => 'selling_price_tax',
-        '消費税率' => 'tax_rate',
-        'JANコード' => 'jan_code',
-        'メーカー品番' => 'manufacturer_part_number',
-    );
-
-    // デバッグ: mapped_headerの内容をログに出力
-    error_log("マッピングされたヘッダー: " . print_r($mapped_header, true));
-
-    $new_data = array();
-    foreach ($lines as $index => $line) {
-        if (empty(trim($line))) {
-            continue; // 空行をスキップ
-        }
-        $row = str_getcsv($line, ',');
-        if (count($row) !== count($header)) {
-            error_log("行の数がヘッダーの数と一致しません: " . print_r($row, true));
-            continue; // ヘッダーと行の数が一致しない場合スキップ
+    if (move_uploaded_file($file, $save_path)) {
+        // ファイルの内容をUTF-8に変換
+        $file_contents = file_get_contents($save_path); // ここを $file から $save_path に変更
+        $encoding = mb_detect_encoding($file_contents, 'SJIS-win, EUC-JP, JIS, UTF-8, ASCII');
+        if ($encoding != 'UTF-8') {
+            $file_contents = mb_convert_encoding($file_contents, 'UTF-8', $encoding);
         }
 
-        // ヘッダーを使用してデータ行にキーを設定
-        $data = array_combine($header, $row);
-        if ($data === FALSE) {
-            error_log("array_combineに失敗しました: " . print_r($row, true));
-            continue; // データの結合に失敗した場合はスキップ
-        }
-        error_log("読み取ったデータ (行 {$index}): " . print_r($data, true)); // 各行のデータをデバッグログに出力
+        // ファイル内容を行ごとに分割
+        $lines = preg_split('/\r\n|\r|\n/', $file_contents);
 
-        // 日付を適切な形式に変換
-        if (isset($data['注文日時'])) {
-            $date = DateTime::createFromFormat('Y年m月d日 H:i', $data['注文日時']);
-            if ($date) {
-                $data['order_date'] = $date->format('Y-m-d H:i');
-            } else {
-                $data['order_date'] = '1970-01-01 00:00'; // パースに失敗した場合
+        // ヘッダー行を取得してカンマで分割
+        $header = str_getcsv(array_shift($lines), ',');
+
+        error_log("CSVヘッダー: " . print_r($header, true)); // ヘッダーをデバッグログに出力
+
+        // ヘッダーをProductDataのプロパティに変換
+        $mapped_header = array(
+            '注文番号' => 'order_number',
+            '注文日時' => 'order_date',
+            'サプライヤーID' => 'supplier_id',
+            'ショップ名' => 'shop_name',
+            '商品管理枝番号' => 'product_branch_code',
+            '商品アイテムID' => 'product_item_id',
+            '注文時商品管理ID' => 'order_product_management_id',
+            '送付先住所' => 'delivery_address',
+            '送付先法人名' => 'delivery_corporate_name',
+            '担当部署' => 'department_in_charge',
+            '送付先氏名' => 'delivery_name',
+            '送付先電話番号' => 'delivery_phone_number',
+            '注文時商品タイトル' => 'order_product_title',
+            '注文時内訳' => 'order_details',
+            'セット毎数量' => 'quantity_per_set',
+            '注文セット数量' => 'order_set_quantity',
+            '合計数量' => 'total_quantity',
+            'セット単価（税込）' => 'set_unit_price_incl_tax',
+            'セット単価（税抜）' => 'set_unit_price_excl_tax',
+            'セット単価（消費税額）' => 'set_unit_price_tax',
+            '販売価格（税込）' => 'selling_price_incl_tax',
+            '販売価格（税抜）' => 'selling_price_excl_tax',
+            '販売価格（消費税額）' => 'selling_price_tax',
+            '消費税率' => 'tax_rate',
+            'JANコード' => 'jan_code',
+            'メーカー品番' => 'manufacturer_part_number',
+        );
+
+        // デバッグ: mapped_headerの内容をログに出力
+        error_log("マッピングされたヘッダー: " . print_r($mapped_header, true));
+
+        $new_data = array();
+        foreach ($lines as $index => $line) {
+            if (empty(trim($line))) {
+                continue; // 空行をスキップ
             }
+            $row = str_getcsv($line, ',');
+            if (count($row) !== count($header)) {
+                error_log("行の数がヘッダーの数と一致しません: " . print_r($row, true));
+                continue; // ヘッダーと行の数が一致しない場合スキップ
+            }
+
+            // ヘッダーを使用してデータ行にキーを設定
+            $data = array_combine($header, $row);
+            if ($data === FALSE) {
+                error_log("array_combineに失敗しました: " . print_r($row, true));
+                continue; // データの結合に失敗した場合はスキップ
+            }
+            error_log("読み取ったデータ (行 {$index}): " . print_r($data, true)); // 各行のデータをデバッグログに出力
+
+            // 日付を適切な形式に変換
+            if (isset($data['注文日時'])) {
+                $date = DateTime::createFromFormat('Y年m月d日 H:i', $data['注文日時']);
+                if ($date) {
+                    $data['order_date'] = $date->format('Y-m-d H:i');
+                } else {
+                    $data['order_date'] = '1970-01-01 00:00'; // パースに失敗した場合
+                }
+            }
+
+            // ヘッダーをProductDataにマッピング
+            $mapped_data = [];
+            foreach ($mapped_header as $csv_key => $property) {
+                $mapped_data[$property] = $data[$csv_key] ?? '';
+            }
+
+            $new_data[$index] = new ProductData($mapped_data);
+            error_log("ProductData オブジェクト (行 {$index}): " . print_r($new_data[$index], true)); // ProductData オブジェクトのデバッグログ
         }
 
-        // ヘッダーをProductDataにマッピング
-        $mapped_data = [];
-        foreach ($mapped_header as $csv_key => $property) {
-            $mapped_data[$property] = $data[$csv_key] ?? '';
-        }
+        // 保存前のデータをログに出力
+        error_log("保存前のデータ: " . print_r($new_data, true));
+        save_formatted_product_data($new_data);
 
-        $new_data[$index] = new ProductData($mapped_data);
-        error_log("ProductData オブジェクト (行 {$index}): " . print_r($new_data[$index], true)); // ProductData オブジェクトのデバッグログ
+        echo '<div class="notice notice-success"><p>CSVデータのインポートが成功しました！</p></div>';
+    } else {
+        error_log("ファイルのアップロードに失敗しました: " . $file);
     }
-
-    // 保存前のデータをログに出力
-    error_log("保存前のデータ: " . print_r($new_data, true));
-    save_formatted_product_data($new_data);
-
-    echo '<div class="notice notice-success"><p>CSVデータのインポートが成功しました！</p></div>';
 }
 
 if (!function_exists('save_formatted_product_data')) {
