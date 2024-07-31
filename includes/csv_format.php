@@ -84,11 +84,10 @@ function process_csv_data($file) {
     // 保存するファイルのパスを決定
     $filename = basename($file);
     $save_path = $user_dir . $filename;
-
     // CSVファイルを保存
     if (move_uploaded_file($file, $save_path)) {
         // ファイルの内容をUTF-8に変換
-        $file_contents = file_get_contents($save_path); // ここを $file から $save_path に変更
+        $file_contents = file_get_contents($save_path);
         $encoding = mb_detect_encoding($file_contents, 'SJIS-win, EUC-JP, JIS, UTF-8, ASCII');
         if ($encoding != 'UTF-8') {
             $file_contents = mb_convert_encoding($file_contents, 'UTF-8', $encoding);
