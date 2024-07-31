@@ -190,6 +190,8 @@ if (!function_exists('save_formatted_product_data')) {
             // 商品に関連するユーザーIDを取得（ここで取得するユーザーIDを vender_id に設定）
             $admin_vendor_id = get_post_field('post_author', $product_id);
 
+            error_log(print_r($admin_vendor_id, true))
+
             // 日付の変換
             $date_str = $product_data->order_date;
             $date_obj = DateTime::createFromFormat('Y年m月d日 H:i', $date_str);
