@@ -72,7 +72,8 @@ function is_duplicate_product($product_item_id, $order_date)
 }
 
 // ユニークなSKUを生成する関数
-function generate_unique_sku($base_sku, $vendor_id) {
+function generate_unique_sku($base_sku, $vendor_id)
+{
     return $base_sku . '-' . $vendor_id . '-';
 }
 
@@ -190,6 +191,7 @@ function process_csv_data($file)
         save_formatted_product_data($new_data);
 
         echo '<div class="notice notice-success"><p>CSVデータのインポートが成功しました！</p></div>';
+        echo '<script type="text/javascript">window.location.reload();</script>';
     } else {
         error_log("ファイルのアップロードに失敗しました: " . $file);
     }
@@ -260,20 +262,6 @@ if (!function_exists('save_formatted_product_data')) {
     }
 }
 
-// WooCommerce の商品一覧を取得してログに出力する関数
-// function log_woocommerce_products()
-// {
-//     $args = array(
-//         'limit' => -1, // すべての商品を取得
-//         'status' => 'any', // すべてのステータスの商品を含む
-//     );
-//     $products = wc_get_products($args);
-
-//     foreach ($products as $product) {
-//         error_log("商品オブジェクト (ID: {$product->get_id()}): " . print_r($product, true));
-//     }
-// }
-
 function sync_with_woocommerce()
 {
     global $wpdb;
@@ -295,6 +283,8 @@ function sync_with_woocommerce()
         // デバッグ: データが見つからなかった場合のメッセージ
         error_log("admin_vendor_id = $user_id の商品データが見つかりませんでした。");
         echo '<div class="notice notice-error"><p>admin_vendor_id = ' . esc_html($user_id) . ' の商品データが見つかりませんでした。</p></div>';
+        echo '<script type="text/javascript">window.location.reload();</script>';
+
         return;
     }
 
@@ -408,6 +398,15 @@ function vendor_csv_format_page_callback()
     $table_name = $wpdb->prefix . 'custom_product_data';
     $query = $wpdb->prepare("SELECT * FROM $table_name WHERE admin_vendor_id = %d", $user_id);
     $results = $wpdb->get_results($query);
+
+    if (isset($_POST['upload_csv']) && check_admin_referer('csv_upload_action', 'csv_upload_nonce')) {
+        if (!empty($_FILES['csv_file']['tmp_name'])) {
+            $file = $_FILES['csv_file']['tmp_name'];
+            process_csv_data($file);
+            // リダイレクトするためのJavaScriptコードを挿入
+            echo '<script type="text/javascript">window.location.reload();</script>';
+        }
+    }
 
 ?>
     <div class="wrap">
